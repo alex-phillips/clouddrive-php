@@ -1,0 +1,12 @@
+{
+    "name": "alexphillips/clouddrive-sdk",
+    "require": {
+        "guzzlehttp/guzzle": "~5.2"
+    },
+    "authors": [
+        {
+            "name": "Alex Phillips",
+            "email": "exonintrendo@gmail.com"
+        }
+    ]
+}
