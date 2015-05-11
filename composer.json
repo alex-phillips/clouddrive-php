@@ -1,12 +1,26 @@
 {
     "name": "alexphillips/clouddrive-sdk",
     "require": {
-        "guzzlehttp/guzzle": "~5.2"
+        "guzzlehttp/guzzle": "~5.2",
+        "illuminate/database": "~5.0",
+        "vlucas/phpdotenv": "~1.1"
     },
     "authors": [
         {
             "name": "Alex Phillips",
             "email": "exonintrendo@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "CloudDrive\\": "src/CloudDrive/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": { "": "tests/" }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.6",
+        "squizlabs/php_codesniffer": "^2.3"
+    }
 }
