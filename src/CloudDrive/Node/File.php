@@ -2,8 +2,8 @@
 
 namespace CloudDrive\Node;
 
-use CloudDrive\Filter;
 use CloudDrive\Node;
+use CloudDrive\Filter;
 
 class File extends Node
 {
