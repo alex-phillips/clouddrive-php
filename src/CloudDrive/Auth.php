@@ -24,12 +24,25 @@ class Auth extends Object
     {
         $this->email = $email;
 
-        if (file_exists("{$this->config['tokens_directory']}{$this->email}.token")) {
-            $token = json_decode(file_get_contents(APP_ROOT . "tokens/{$this->email}.token"), true);
-            if (time() - $token['lastAuthorized'] > 60) {
-                $token = $this->refreshToken($token['refresh_token']);
+        $token = '';
+        if (isset($this->config['tokens_store'])) {
+            if (file_exists($this->config['tokens_store'])) {
+                $tokens = json_decode(file_get_contents($this->config['tokens_store']), true);
+                if (isset($token[$email])) {
+                    $token = $tokens['email'];
+                }
             }
-        } else {
+        } else if (isset($this->config['tokens_directory'])) {
+            if (file_exists("{$this->config['tokens_directory']}{$this->email}.token")) {
+                $token = json_decode(file_get_contents(APP_ROOT
+                    . "tokens/{$this->email}.token"), true);
+                if (time() - $token['lastAuthorized'] > 60) {
+                    $token = $this->refreshToken($token['refresh_token']);
+                }
+            }
+        }
+
+        if (!$token) {
             $token = $this->getAuthorizationGrant();
         }
 
