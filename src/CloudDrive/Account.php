@@ -6,19 +6,17 @@ use GuzzleHttp\Client;
 
 class Account extends Object
 {
+    protected $accessToken = '';
+
     protected $contentUrl = '';
 
     protected $metadataUrl = '';
 
     protected $urlPrefix = 'https://cdws.us-east-1.amazonaws.com/drive/v1/account/';
 
-    protected $accessToken = '';
-
     public function __construct($accessToken)
     {
-
         $this->accessToken = $accessToken;
-
         $this->httpClient = new Client();
     }
 
