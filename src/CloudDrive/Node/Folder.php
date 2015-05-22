@@ -2,8 +2,8 @@
 
 namespace CloudDrive\Node;
 
-use CloudDrive\Filter;
 use CloudDrive\Node;
+use CloudDrive\Filter;
 
 class Folder extends Node
 {
@@ -14,7 +14,8 @@ class Folder extends Node
         ];
         while ($folder = $this->getMetadataById($id)) {
             array_unshift($path, $folder['id']);
-            if (count($folder['parents']) === 0) {
+
+            if (isset($folder['isRoot']) && $folder['isRoot'] === true) {
                 break;
             }
 
@@ -75,9 +76,7 @@ class Folder extends Node
         if ($response['success']) {
             $folder = $response['data'];
 
-            // @TODO: maybe replace this with a check for 'isRoot'? That offset exists
-            // on the root.
-            while (isset($folder['parents']) && count($folder['parents']) > 0) {
+            while (!isset($folder['isRoot']) || $folder['isRoot'] !== true) {
                 array_unshift($lineage, $folder);
 
                 $response = $this->getMetadataById($folder['parents'][0]);
