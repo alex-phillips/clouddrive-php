@@ -16,6 +16,10 @@ class Auth extends Object
 
     public function __construct(array $config = [])
     {
+        if (isset($config['tokens_directory']) && substr($config['tokens_directory'], -1) !== '/') {
+            $config['tokens_directory'] .= '/';
+        }
+
         $this->config = $config;
         $this->httpClient = new Client();
     }
@@ -28,8 +32,8 @@ class Auth extends Object
         if (isset($this->config['tokens_store'])) {
             if (file_exists($this->config['tokens_store'])) {
                 $tokens = json_decode(file_get_contents($this->config['tokens_store']), true);
-                if (isset($token[$email])) {
-                    $token = $tokens['email'];
+                if (isset($tokens[$email])) {
+                    $token = $tokens[$email];
                 }
             }
         } else if (isset($this->config['tokens_directory'])) {
@@ -88,12 +92,12 @@ class Auth extends Object
 
         if ($response['success']) {
             $response['data']['lastAuthorized'] = time();
-            file_put_contents(APP_ROOT . "tokens/{$this->email}.token", json_encode($response['data']));
+            $this->saveToken($response['data']);
         } else {
             throw new \Exception($response['data']['message']);
         }
 
-        return $response;
+        return $response['data'];
     }
 
     public function refreshToken($refreshToken)
@@ -115,11 +119,25 @@ class Auth extends Object
 
         if ($response['success']) {
             $response['data']['lastAuthorized'] = time();
-            file_put_contents(APP_ROOT . "tokens/{$this->email}.token", json_encode($response['data']));
+            $this->saveToken($response['data']);
         } else {
             throw new \Exception("Unable to refresh authorization token: " . $response['data']['message']);
         }
 
         return $response;
+    }
+
+    protected function saveToken($tokenData)
+    {
+        if (isset($this->config['tokens_store'])) {
+            $data = [];
+            if (file_exists($this->config['tokens_store'])) {
+                $data = json_decode(file_get_contents($this->config['tokens_store']), true);
+            }
+            $data[$this->email] = $tokenData;
+            file_put_contents($this->config['tokens_store'], json_encode($data));
+        } else if (isset($this->config['tokens_directory'])) {
+            file_put_contents($this->config['tokens_directory'] . "{$this->email}.token", json_encode($tokenData));
+        }
     }
 }
