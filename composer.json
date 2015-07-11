@@ -4,7 +4,7 @@
     "require": {
         "guzzlehttp/guzzle": "^6.0",
         "vlucas/phpdotenv": "^2.0",
-        "alex-phillips/utilities": "dev-master",
+        "alex-phillips/utilities": "~0.1",
         "illuminate/database": "^5.1",
         "cilex/cilex": "^1.1"
     },
