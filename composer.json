@@ -1,26 +1,22 @@
 {
-    "name": "alexphillips/clouddrive-sdk",
+    "name": "alex-phillips/clouddrive",
+    "description": "PHP SDK and CLI for Amazon's CloudDrive",
     "require": {
-        "guzzlehttp/guzzle": "~5.2",
-        "illuminate/database": "~5.0",
-        "vlucas/phpdotenv": "~1.1"
+        "guzzlehttp/guzzle": "^6.0",
+        "vlucas/phpdotenv": "^2.0",
+        "alex-phillips/utilities": "dev-master",
+        "illuminate/database": "^5.1",
+        "cilex/cilex": "^1.1"
     },
     "authors": [
         {
             "name": "Alex Phillips",
-            "email": "exonintrendo@gmail.com"
+            "email": "ahp118@gmail.com"
         }
     ],
     "autoload": {
         "psr-4": {
-            "CloudDrive\\": "src/CloudDrive/"
+            "": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": { "": "tests/" }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "~4.6",
-        "squizlabs/php_codesniffer": "^2.3"
     }
 }
