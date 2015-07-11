@@ -18,5 +18,8 @@
         "psr-4": {
             "": "src/"
         }
-    }
+    },
+    "bin": [
+        "bin/clouddrive"
+    ]
 }
