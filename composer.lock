@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b15af7965a2a8619bbfa1fc91e56d64e",
+    "hash": "02203217c313061d1ec7af9fa42e1a7c",
     "packages": [
         {
             "name": "alex-phillips/utilities",
-            "version": "dev-master",
+            "version": "0.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/alex-phillips/Utilities.git",
@@ -1059,9 +1059,7 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "alex-phillips/utilities": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
