@@ -1,6 +1,6 @@
 <?php
 /**
- * @author Alex Phillips <aphillips@cbcnewmedia.com>
+ * @author Alex Phillips <ahp118@gmail.com>
  * Date: 7/11/15
  * Time: 11:06 AM
  */

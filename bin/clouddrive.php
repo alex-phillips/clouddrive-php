@@ -7,7 +7,7 @@ date_default_timezone_set('America/New_York');
 
 require_once(dirname(__FILE__) . '/../vendor/autoload.php');
 
-define('CLI_ROOT', realpath(dirname(__FILE__) . '/../.cache/'));
+define('CLI_ROOT', realpath(dirname(__FILE__) . '/../.cache') . '/');
 
 $app = new \Cilex\Application('CloudDrive', '0.1.0');
 

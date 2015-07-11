@@ -1,6 +1,6 @@
 <?php
 /**
- * @author Alex Phillips <aphillips@cbcnewmedia.com>
+ * @author Alex Phillips <ahp118@gmail.com>
  * Date: 7/10/15
  * Time: 3:38 PM
  */
@@ -44,8 +44,7 @@ class CloudDrive
     public function __construct($email, $clientId, $clientSecret, $cacheStore, $cacheDir = null)
     {
         if (!$cacheDir) {
-            // @TODO: fix home directory
-            $cacheDir = '/Users/alexphillips/.cache/clouddrive-php/';
+            $cacheDir = '/tmp/.cache/clouddrive/';
         }
 
         if (substr($cacheDir, -1) !== '/') {
