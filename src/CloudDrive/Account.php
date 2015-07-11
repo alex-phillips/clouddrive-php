@@ -2,92 +2,434 @@
 
 namespace CloudDrive;
 
+use PDO;
 use GuzzleHttp\Client;
+use Utility\ParameterBag;
 
-class Account extends Object
+class Account
 {
-    protected $accessToken = '';
+    /**
+     * @var null|string
+     */
+    private $checkpoint;
 
-    protected $contentUrl = '';
+    /**
+     * @var \GuzzleHttp\Client
+     */
+    private $httpClient;
 
-    protected $metadataUrl = '';
+    /**
+     * @var string
+     */
+    private $clientId;
 
-    protected $urlPrefix = 'https://cdws.us-east-1.amazonaws.com/drive/v1/account/';
+    /**
+     * @var string
+     */
+    private $clientSecret;
 
-    public function __construct($accessToken)
+    /**
+     * @var string
+     */
+    private $contentUrl;
+
+    /**
+     * @var \CloudDrive\Cache
+     */
+    private $cache;
+
+    /**
+     * @var string
+     */
+    private $email;
+
+    /**
+     * @var string
+     */
+    private $metadataUrl;
+
+    /**
+     * @var \Utility\ParameterBag
+     */
+    private $token;
+
+    /**
+     * Construct a new `Account` instance with the user's email as well as the
+     * Amazon Cloud Drive API credentials and data store.
+     *
+     * @param string $email
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param \PDO   $database
+     */
+    public function __construct($email, $clientId, $clientSecret, Cache $cache)
     {
-        $this->accessToken = $accessToken;
+        $this->email = $email;
+        $this->clientId = $clientId;
+        $this->clientSecret = $clientSecret;
+        $this->cache = $cache;
         $this->httpClient = new Client();
     }
 
-    public function getAccessToken()
+    /**
+     * Authorize the user object. If the initial authorization has not been
+     * completed, the `auth_url` is returned. If authorization has already
+     * happened and the `access_token` hasn't passed its expiration time, we
+     * are already authorized. Otherwise, if the `access_token` has expired,
+     * request a new token. This method also retrieves the user's API endpoints.
+     *
+     * @param null|string $redirectUrl The URL the user is redirected to after
+     *                                 navigating to the authorization URL.
+     *
+     * @return array
+     */
+    public function authorize($redirectUrl = null)
     {
-        return $this->accessToken;
-    }
+        $retval = [
+            'success' => true,
+            'data' => [],
+        ];
 
-    public function getAccountInfo()
-    {
-        $response = $this->httpClient->get($this->urlPrefix . 'info', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken
-            ]
-        ]);
-
-        $body = json_decode((string)$response->getBody(), true);
-
-        return $body;
-    }
-
-    public function getContentUrl()
-    {
-        if (!$this->contentUrl) {
-            $data = $this->getEndpoint();
-            $this->contentUrl = $data['data']['contentUrl'];
+        $config = $this->cache->loadAccountConfig($this->email);
+        if (!$config) {
+            $config = [];
         }
 
+        $this->token = new ParameterBag($config);
+
+        if (!$this->token["access_token"]) {
+            if (!$redirectUrl) {
+                $retval = [
+                    'success' => false,
+                    'data'    => [
+                        'message'  => 'Initial authorization required.',
+                        'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope=clouddrive%3Aread%20clouddrive%3Awrite&response_type=code&redirect_uri=http://localhost",
+                    ],
+                ];
+
+                return $retval;
+            }
+
+            $response = $this->requestAuthorization($redirectUrl);
+
+            if (!$response["success"]) {
+                return $response;
+            }
+
+            $this->token = new ParameterBag($response["data"]);
+        } else if (time() - $this->token["last_authorized"] > $this->token["expires_in"]) {
+            $response = $this->renewAuthorization();
+            if (!$response["success"]) {
+                return $response;
+            }
+        }
+
+        if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
+            $response = $this->fetchEndpoint();
+            if (!$response['success']) {
+                return $response;
+            }
+
+            $this->token['metadata_url'] = $response['data']['metadataUrl'];
+            $this->token['content_url'] = $response['data']['contentUrl'];
+        }
+
+        $this->checkpoint = $this->token["checkpoint"];
+        $this->metadataUrl = $this->token["metadata_url"];
+        $this->contentUrl = $this->token["content_url"];
+
+        $this->save();
+
+        return $retval;
+    }
+
+    /**
+     * Reset the account's sync checkpoint.
+     */
+    public function clearCache()
+    {
+        $this->checkpoint = null;
+        $this->save();
+        $this->cache->deleteAllNodes();
+    }
+
+    /**
+     * Fetch the user's API endpoints from the REST API.
+     *
+     * @return array
+     */
+    private function fetchEndpoint()
+    {
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = $this->httpClient->get('https://cdws.us-east-1.amazonaws.com/drive/v1/account/endpoint', [
+            'headers' => [
+                'Authorization' => "Bearer {$this->token["access_token"]}",
+            ],
+            'exceptions' => false,
+        ]);
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+        }
+
+        return $retval;
+    }
+
+    public function getChanges()
+    {
+
+    }
+
+    public function getCheckpoint()
+    {
+        return $this->checkpoint;
+    }
+
+    /**
+     * Retrieve the user's API content URL.
+     *
+     * @return string
+     */
+    public function getContentUrl()
+    {
         return $this->contentUrl;
     }
 
-    public function getEndpoint()
+    public function getEmail()
     {
-        $request = $this->httpClient->createRequest('GET', $this->urlPrefix . 'endpoint', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken
-            ]
-        ]);
-
-        return $this->sendRequest($request);
+        return $this->email;
     }
 
+    /**
+     * Retrieve the user's API metadata URL.
+     *
+     * @return string
+     */
     public function getMetadataUrl()
     {
-        if (!$this->metadataUrl) {
-            $data = $this->getEndpoint();
-            $this->metadataUrl = $data['data']['metadataUrl'];
-        }
-
         return $this->metadataUrl;
     }
 
+    /**
+     * Retrieve the account's quota.
+     *
+     * @return array
+     */
     public function getQuota()
     {
-        $request = $this->httpClient->createRequest('GET', $this->urlPrefix . 'quota', [
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = $this->httpClient->get("{$this->getMetadataUrl()}account/quota", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken
-            ]
+                'Authorization' => "Bearer {$this->token["access_token"]}",
+            ],
+            'exceptions' => false,
         ]);
 
-        return $this->sendRequest($request);
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+        }
+
+        return $retval;
     }
 
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * Retrieve the account's current usage.
+     *
+     * @return array
+     */
     public function getUsage()
     {
-        $request = $this->httpClient->createRequest('GET', $this->urlPrefix . 'usage', [
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = $this->httpClient->get("{$this->getMetadataUrl()}account/usage", [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken
-            ]
+                'Authorization' => "Bearer {$this->token["access_token"]}",
+            ],
+            'exceptions' => false,
         ]);
 
-        return $this->sendRequest($request);
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Renew the OAuth2 access token after the current access token has expired.
+     *
+     * @return array
+     */
+    public function renewAuthorization()
+    {
+        $retval = [
+            "success" => false,
+            "data" => [],
+        ];
+
+        $response = $this->httpClient->post('https://api.amazon.com/auth/o2/token', [
+            'form_params' => [
+                'grant_type'    => "refresh_token",
+                'refresh_token' => $this->token["refresh_token"],
+                'client_id'     => $this->clientId,
+                'client_secret' => $this->clientSecret,
+                'redirect_uri'  => "http://localhost",
+            ],
+            'exceptions'  => false,
+        ]);
+
+        $retval["data"] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval["success"] = true;
+            $retval["data"]["last_authorized"] = time();
+            $this->token->replace($retval['data']);
+            $this->save();
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Use the `code` from the passed in `authUrl` to retrieve the OAuth2
+     * tokens for API access.
+     *
+     * @param string $authUrl The redirect URL from the authorization request
+     *
+     * @return array
+     */
+    private function requestAuthorization($authUrl)
+    {
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $url = parse_url($authUrl);
+        parse_str($url['query'], $params);
+
+        if (!isset($params['code'])) {
+            $retval['data']['message'] = "No authorization code found in callback URL: $authUrl";
+
+            return $retval;
+        }
+
+        $response = $this->httpClient->post('https://api.amazon.com/auth/o2/token', [
+            'form_params' => [
+                'grant_type'    => 'authorization_code',
+                'code'          => $params['code'],
+                'client_id'     => $this->clientId,
+                'client_secret' => $this->clientSecret,
+                'redirect_uri'  => 'http://localhost',
+            ],
+            'exceptions' => false,
+        ]);
+
+        $retval["data"] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval["success"] = true;
+            $retval["data"]["last_authorized"] = time();
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Save the account config into the cache database. This includes authorization
+     * tokens, endpoint URLs, and the last sync checkpoint.
+     *
+     * @return bool
+     */
+    public function save()
+    {
+        return $this->cache->saveAccountConfig($this);
+    }
+
+    public function sync()
+    {
+        $params = [
+            'includePurged' => "true",
+            'maxNodes' => 200,
+        ];
+
+        while (true) {
+            if ($this->checkpoint) {
+                $params['checkpoint'] = $this->checkpoint;
+            }
+
+            $loop = true;
+
+            $response = $this->httpClient->post("{$this->getMetadataUrl()}changes", [
+                'headers' => [
+                    'Authorization' => "Bearer {$this->token['access_token']}",
+                ],
+                'body' => json_encode($params),
+                'exceptions' => false,
+            ]);
+
+            if ($response->getStatusCode() !== 200) {
+                throw new \Exception((string)$response->getBody());
+            }
+
+            $data = explode("\n", (string)$response->getBody());
+            foreach ($data as $part) {
+                $part = json_decode($part, true);
+
+                if (isset($part['end']) && $part['end'] === true) {
+                    break;
+                }
+
+                if (isset($part['reset']) && $part['reset'] === true) {
+                    $this->cache->deleteAllNodes();
+                }
+
+                if (isset($part['checkpoint'])) {
+                    $this->checkpoint = $part['checkpoint'];
+                }
+
+                if (isset($part['nodes'])) {
+                    if (empty($part['nodes'])) {
+                        $loop = false;
+                    } else {
+                        $this->save();
+                        foreach ($part['nodes'] as $node) {
+                            $node = new Node($node);
+                            if ($node['status'] === 'PURGED') {
+                                $this->cache->deleteNodeById($node['id']);
+                            } else {
+                                $this->cache->saveNode($node);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!$loop) {
+                break;
+            }
+        }
     }
 }
