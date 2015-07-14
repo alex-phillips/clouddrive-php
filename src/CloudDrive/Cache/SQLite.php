@@ -27,6 +27,14 @@ class SQLite implements Cache
 
     public function __construct($email, $cacheDir)
     {
+        if (!file_exists($cacheDir)) {
+            mkdir($cacheDir, 0777, true);
+        }
+
+        if (substr($cacheDir, -1) !== '/') {
+            $cacheDir .= '/';
+        }
+
         if (!file_exists("{$cacheDir}{$email}.db")) {
             $db = new SQLite3("{$cacheDir}{$email}.db");
             $db->exec(
