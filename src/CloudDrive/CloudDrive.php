@@ -12,9 +12,9 @@ use GuzzleHttp\Client;
 class CloudDrive
 {
     /**
-     * @var string
+     * @var \CloudDrive\Account
      */
-    private $cacheDir;
+    private $account;
 
     /**
      * @var \GuzzleHttp\Client
@@ -34,35 +34,27 @@ class CloudDrive
     /**
      * @var \CloudDrive\Cache
      */
-    private $db;
+    private $cache;
 
     /**
      * @var string
      */
     private $email;
 
-    public function __construct($email, $clientId, $clientSecret, $cacheStore, $cacheDir = null)
+    public function __construct($email, $clientId, $clientSecret, Cache $cacheStore, Account $account = null)
     {
-        if (!$cacheDir) {
-            $cacheDir = '/tmp/.cache/clouddrive/';
-        }
-
-        if (substr($cacheDir, -1) !== '/') {
-            $cacheDir .= '/';
-        }
-
-        if (!file_exists($cacheDir)) {
-            mkdir($cacheDir, 0777, true);
-        }
-
         $this->email = $email;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->db = $cacheStore;
-        $this->cacheDir = $cacheDir;
+        $this->cache = $cacheStore;
 
         $this->client = new Client();
-        $this->account = new Account($this->email, $this->clientId, $this->clientSecret, $this->db);
+
+        if (is_null($account)) {
+            $account = new Account($this->email, $this->clientId, $this->clientSecret, $this->cache);
+        }
+
+        $this->account = $account;
     }
 
     private function buildNodePath(Node $node)
@@ -90,7 +82,7 @@ class CloudDrive
         return implode('/', $path);
     }
 
-    public function createDirectory($path)
+    public function createDirectoryPath($path)
     {
         $retval = [
             'success' => true,
@@ -155,7 +147,7 @@ class CloudDrive
 
         if ($response->getStatusCode() === 201) {
             $retval['success'] = true;
-            $this->db->saveNode(new Node($retval['data']));
+            $this->cache->saveNode(new Node($retval['data']));
         }
 
         return $retval;
@@ -163,17 +155,17 @@ class CloudDrive
 
     public function findNodeByMd5($md5)
     {
-        return $this->db->findNodeByMd5($md5);
+        return $this->cache->findNodeByMd5($md5);
     }
 
     public function findNodesByName($name)
     {
-        return $this->db->findNodesByName($name);
+        return $this->cache->findNodesByName($name);
     }
 
     public function findNodeById($id)
     {
-        return $this->db->findNodeById($id);
+        return $this->cache->findNodeById($id);
     }
 
     public function findNodeByPath($path)
@@ -214,7 +206,7 @@ class CloudDrive
             $node = $this->findNodeByPath($node);
         }
 
-        return $this->db->getNodeChildren($node);
+        return $this->cache->getNodeChildren($node);
     }
 
     public function getPathArray($path)
@@ -357,9 +349,9 @@ class CloudDrive
             $response = $this->uploadFile($file->getPathname(), $remotePath, $overwrite);
             if ($outputProgress === true) {
                 if ($response['success'] === true) {
-                    echo "Successfully uploaded file $file: " . json_encode($response['data']);
+                    echo "Successfully uploaded file $file: " . json_encode($response['data']) . "\n";
                 } else {
-                    echo "Failed to upload file $file: " . json_encode($response['data']);
+                    echo "Failed to upload file $file: " . json_encode($response['data']) . "\n";
                 }
             }
 
@@ -391,7 +383,7 @@ class CloudDrive
         $info = pathinfo($localPath);
         $remotePath = $this->getPathString($this->getPathArray($remotePath));
 
-        $response = $this->createDirectory($remotePath);
+        $response = $this->createDirectoryPath($remotePath);
         if ($response['success'] === false) {
             return $response;
         }
@@ -445,7 +437,7 @@ class CloudDrive
 
         if ($response->getStatusCode() === 201) {
             $retval['success'] = true;
-            $this->db->saveNode(new Node($retval['data']));
+            $this->cache->saveNode(new Node($retval['data']));
         }
 
         return $retval;
