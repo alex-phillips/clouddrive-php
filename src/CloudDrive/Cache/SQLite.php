@@ -7,24 +7,28 @@
 
 namespace CloudDrive\Cache;
 
+use PDO;
+use SQLite3;
 use CloudDrive\Account;
 use CloudDrive\Cache;
 use CloudDrive\Node;
-use PDO;
-use SQLite3;
 
 class SQLite implements Cache
 {
     /**
+     * The database handle
+     *
      * @var \PDO
      */
     private $db;
 
     /**
-     * @var \CloudDrive\Cache\SQLite
+     * Construct a new SQLite cache object. The database will be saved in the
+     * provided `cacheDir` under the name `$email.db`.
+     *
+     * @param string $email    The email for the account
+     * @param string $cacheDir The directory to save the database in
      */
-    private static $instance;
-
     public function __construct($email, $cacheDir)
     {
         if (!file_exists($cacheDir)) {
@@ -67,16 +71,20 @@ class SQLite implements Cache
         }
 
         $this->db = new PDO("sqlite:{$cacheDir}{$email}.db");
-
-        self::$instance = $this;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function deleteAllNodes()
     {
         return $this->db->prepare("DELETE FROM nodes WHERE 1=1;")
             ->execute();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function deleteNodeById($id)
     {
         return $this->db->prepare("DELETE FROM nodes WHERE id = :id;")
@@ -87,6 +95,9 @@ class SQLite implements Cache
             );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function findNodeById($id)
     {
         $stmt = $this->db->prepare('SELECT raw_data FROM nodes WHERE id = :id;');
@@ -106,6 +117,9 @@ class SQLite implements Cache
         return new Node(json_decode($results[0][0], true));
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function findNodeByMd5($md5)
     {
         $stmt = $this->db->prepare('SELECT raw_data FROM nodes WHERE md5 = :md5;');
@@ -125,6 +139,9 @@ class SQLite implements Cache
         return new Node(json_decode($results[0]['raw_data'], true));
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function findNodesByName($name)
     {
         $stmt = $this->db->prepare('SELECT raw_data FROM nodes WHERE name = :name;');
@@ -141,6 +158,9 @@ class SQLite implements Cache
         return $results;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getNodeChildren(Node $node)
     {
         $stmt = $this->db->prepare("SELECT raw_data FROM nodes WHERE parents LIKE '%{$node['id']}';");
@@ -154,6 +174,9 @@ class SQLite implements Cache
         return $results;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function loadAccountConfig($email)
     {
         $stmt = $this->db->prepare('SELECT * FROM config WHERE email = :email');
@@ -164,6 +187,9 @@ class SQLite implements Cache
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function saveAccountConfig(Account $account)
     {
         $sql = <<<__SQL__
@@ -191,6 +217,9 @@ __SQL__;
         return $result;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function saveNode(Node $node)
     {
         if (!$node['name'] && $node['isRoot'] === true) {

@@ -5,49 +5,73 @@ namespace CloudDrive;
 use GuzzleHttp\Client;
 use Utility\ParameterBag;
 
+/**
+ * Class containing all account information as well as managing permission and
+ * requesting / renewing access.
+ *
+ * @package CloudDrive
+ */
 class Account
 {
     /**
+     * The checkpoint of the last sync request
+     *
      * @var null|string
      */
     private $checkpoint;
 
     /**
+     * The Guzzle HTTP client
+     *
      * @var \GuzzleHttp\Client
      */
     private $httpClient;
 
     /**
+     * Amazon CloudDrive API Client ID credentials
+     *
      * @var string
      */
     private $clientId;
 
     /**
+     * Amazon CloudDrive API Client Secret credentials
+     *
      * @var string
      */
     private $clientSecret;
 
     /**
+     * The account's content URL received from the `endpoint` API call
+     *
      * @var string
      */
     private $contentUrl;
 
     /**
+     * Local cache storage object
+     *
      * @var \CloudDrive\Cache
      */
     private $cache;
 
     /**
+     * Account email
+     *
      * @var string
      */
     private $email;
 
     /**
+     * The account's metadata URL received from the `endpoint` API call
+     *
      * @var string
      */
     private $metadataUrl;
 
     /**
+     * API permissions scope
+     *
      * @var array
      */
     private $scope = [
@@ -56,6 +80,8 @@ class Account
     ];
 
     /**
+     * API access token data
+     *
      * @var \Utility\ParameterBag
      */
     private $token;
@@ -197,11 +223,11 @@ class Account
         return $retval;
     }
 
-    public function getChanges()
-    {
-
-    }
-
+    /**
+     * Retrieve the last sync checkpoint.
+     *
+     * @return null|string
+     */
     public function getCheckpoint()
     {
         return $this->checkpoint;
@@ -217,6 +243,11 @@ class Account
         return $this->contentUrl;
     }
 
+    /**
+     * Retrieve the account's email.
+     *
+     * @return string
+     */
     public function getEmail()
     {
         return $this->email;
@@ -260,6 +291,11 @@ class Account
         return $retval;
     }
 
+    /**
+     * Retrieve access token data.
+     *
+     * @return ParameterBag
+     */
     public function getToken()
     {
         return $this->token;
@@ -384,6 +420,13 @@ class Account
         return $this->cache->saveAccountConfig($this);
     }
 
+    /**
+     * Set the permission scope of the API before requesting authentication.
+     *
+     * @param array $scopes The permissions requested
+     *
+     * @return $this
+     */
     public function setScope(array $scopes)
     {
         $this->scope = $scopes;
@@ -391,6 +434,12 @@ class Account
         return $this;
     }
 
+    /**
+     * Sync the local cache with the remote changes. If checkpoint is null, this
+     * will sync all remote node data.
+     *
+     * @throws \Exception
+     */
     public function sync()
     {
         $params = [
