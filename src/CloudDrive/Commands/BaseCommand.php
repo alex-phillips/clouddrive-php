@@ -43,6 +43,21 @@ abstract class BaseCommand extends Command
         $this->_execute();
     }
 
+    protected function init()
+    {
+        $this->readConfig();
+
+        if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
+            $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], new SQLite($this->config['email'], $this->configPath));
+            if ($clouddrive->getAccount()->authorize()['success']) {
+                $this->clouddrive = $clouddrive;
+            } else {
+                $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
+
+            }
+        }
+    }
+
     abstract protected function _execute();
 
     protected function readConfig()
@@ -57,20 +72,5 @@ abstract class BaseCommand extends Command
     protected function saveConfig()
     {
         file_put_contents("{$this->configPath}cli.json", json_encode($this->config));
-    }
-
-    protected function init()
-    {
-        $this->readConfig();
-
-        if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
-            $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], new SQLite($this->config['email'], $this->configPath));
-            if ($clouddrive->account->authorize()['success']) {
-                $this->clouddrive = $clouddrive;
-            } else {
-                $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
-
-            }
-        }
     }
 }

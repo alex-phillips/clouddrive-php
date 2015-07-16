@@ -13,6 +13,11 @@ use JsonSerializable;
 use Countable;
 use Utility\Traits\Bag;
 
+/**
+ * Class representing a remote `node` object in Amazon's CloudDrive.
+ *
+ * @package CloudDrive
+ */
 class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countable
 {
     use Bag;
