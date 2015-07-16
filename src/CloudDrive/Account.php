@@ -2,7 +2,6 @@
 
 namespace CloudDrive;
 
-use PDO;
 use GuzzleHttp\Client;
 use Utility\ParameterBag;
 
@@ -49,9 +48,24 @@ class Account
     private $metadataUrl;
 
     /**
+     * @var array
+     */
+    private $scope = [
+        self::SCOPE_READ_ALL,
+        self::SCOPE_WRITE,
+    ];
+
+    /**
      * @var \Utility\ParameterBag
      */
     private $token;
+
+    const SCOPE_READ_IMAGE    = 'clouddrive:read_image';
+    const SCOPE_READ_VIDEO    = 'clouddrive:read_video';
+    const SCOPE_READ_DOCUMENT = 'clouddrive:read_document';
+    const SCOPE_READ_OTHER    = 'clouddrive:read_other';
+    const SCOPE_READ_ALL      = 'clouddrive:read_all';
+    const SCOPE_WRITE         = 'clouddrive:write';
 
     /**
      * Construct a new `Account` instance with the user's email as well as the
@@ -60,7 +74,7 @@ class Account
      * @param string $email
      * @param string $clientId
      * @param string $clientSecret
-     * @param \PDO   $database
+     * @param Cache  $cache
      */
     public function __construct($email, $clientId, $clientSecret, Cache $cache)
     {
@@ -97,13 +111,15 @@ class Account
 
         $this->token = new ParameterBag($config);
 
+        $scope = urlencode(implode(' ', $this->scope));
+
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
                 $retval = [
                     'success' => false,
                     'data'    => [
                         'message'  => 'Initial authorization required.',
-                        'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope=clouddrive%3Aread%20clouddrive%3Awrite&response_type=code&redirect_uri=http://localhost",
+                        'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope=$scope&response_type=code&redirect_uri=http://localhost",
                     ],
                 ];
 
@@ -366,6 +382,13 @@ class Account
     public function save()
     {
         return $this->cache->saveAccountConfig($this);
+    }
+
+    public function setScope(array $scopes)
+    {
+        $this->scope = $scopes;
+
+        return $this;
     }
 
     public function sync()
