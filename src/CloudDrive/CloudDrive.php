@@ -9,6 +9,12 @@ namespace CloudDrive;
 
 use GuzzleHttp\Client;
 
+/**
+ * Class that handles all communication for accessing and altering nodes,
+ * retrieving account information, and managing the local cache store.
+ *
+ * @package CloudDrive
+ */
 class CloudDrive
 {
     /**
@@ -41,6 +47,19 @@ class CloudDrive
      */
     private $email;
 
+    /**
+     * Construct a new instance of `CloudDrive`. This handles all communication
+     * for accessing and altering nodes, retrieving account information, and
+     * managing the local cache store.
+     *
+     * @param string       $email        The email for the account to connec to
+     * @param string       $clientId     Amazon CloudDrive API client ID credential
+     * @param string       $clientSecret Amazon CloudDrive API client secret credential
+     * @param Cache        $cacheStore   Local cache storage object
+     * @param Account|null $account      `Account` object. If not passed in, this will
+     *                                   be created using the email and credentials used
+     *                                   here
+     */
     public function __construct($email, $clientId, $clientSecret, Cache $cacheStore, Account $account = null)
     {
         $this->email = $email;
@@ -57,6 +76,14 @@ class CloudDrive
         $this->account = $account;
     }
 
+    /**
+     * Build and return the remote directory path of the given node.
+     *
+     * @param \CloudDrive\Node $node The node to build the path for
+     *
+     * @return string
+     * @throws \Exception
+     */
     private function buildNodePath(Node $node)
     {
         $path = [];
@@ -82,6 +109,15 @@ class CloudDrive
         return implode('/', $path);
     }
 
+    /**
+     * Recursively create a remote directory path. If parts of the path already
+     * exist, it will continue until the entire path exists.
+     *
+     * @param string $path The directory path to create
+     *
+     * @return array
+     * @throws \Exception
+     */
     public function createDirectoryPath($path)
     {
         $retval = [
@@ -116,6 +152,16 @@ class CloudDrive
         return $retval;
     }
 
+    /**
+     * Create a new remote node nested under the provided parents (created under
+     * root node if none given).
+     *
+     * @param string $name    Name of the new remote folder
+     * @param null   $parents Parent IDs to give the folder
+     *
+     * @return array
+     * @throws \Exception
+     */
     public function createFolder($name, $parents = null)
     {
         $retval = [
@@ -153,21 +199,48 @@ class CloudDrive
         return $retval;
     }
 
+    /**
+     * Find and return nodes that have the given MD5.
+     *
+     * @param string $md5 MD5 checksum of the node
+     *
+     * @return mixed
+     */
     public function findNodeByMd5($md5)
     {
         return $this->cache->findNodeByMd5($md5);
     }
 
+    /**
+     * Find and return any nodes that match the given name.
+     *
+     * @param string $name Name of the node to find
+     *
+     * @return mixed
+     */
     public function findNodesByName($name)
     {
         return $this->cache->findNodesByName($name);
     }
 
+    /**
+     * Find and return the node matching the given ID.
+     *
+     * @param string $id ID of the node
+     *
+     * @return mixed
+     */
     public function findNodeById($id)
     {
         return $this->cache->findNodeById($id);
     }
 
+    /**
+     * @param $path
+     *
+     * @return null|\CloudDrive\Node
+     * @throws \Exception
+     */
     public function findNodeByPath($path)
     {
         $path = trim($path, '/');
@@ -200,6 +273,13 @@ class CloudDrive
         return $this->account;
     }
 
+    /**
+     * Get all children of the given `Node`.
+     *
+     * @param string|\CloudDrive\Node $node The node to get children of
+     *
+     * @return mixed
+     */
     public function getChildren($node)
     {
         if (!($node instanceof Node)) {
@@ -209,6 +289,13 @@ class CloudDrive
         return $this->cache->getNodeChildren($node);
     }
 
+    /**
+     * Convert a given path string into an array of directory names.
+     *
+     * @param string|array $path
+     *
+     * @return array
+     */
     public function getPathArray($path)
     {
         if (is_array($path)) {
@@ -218,6 +305,13 @@ class CloudDrive
         return array_filter(explode('/', $path));
     }
 
+    /**
+     * Properly format a string or array of folders into a path string.
+     *
+     * @param string|array $path The remote path to format
+     *
+     * @return string
+     */
     public function getPathString($path)
     {
         if (is_string($path)) {
@@ -227,6 +321,12 @@ class CloudDrive
         return trim(implode('/', $path));
     }
 
+    /**
+     * Return the root node.
+     *
+     * @return \CloudDrive\Node
+     * @throws \Exception
+     */
     public function getRootNode()
     {
         $results = $this->findNodesByName('ROOT');
@@ -243,6 +343,16 @@ class CloudDrive
         throw new \Exception("Unable to find root node.");
     }
 
+    /**
+     * Determine if a node matching the given path exists remotely. If a local
+     * path is given, the MD5 will be compared as well.
+     *
+     * @param string      $remotePath The remote path to check
+     * @param null|string $localPath  Local path of file to compare MD5
+     *
+     * @return array
+     * @throws \Exception'
+     */
     public function nodeExists($remotePath, $localPath = null)
     {
         if (is_null($file = $this->findNodeByPath($remotePath))) {
@@ -297,6 +407,15 @@ class CloudDrive
         return $retval;
     }
 
+    /**
+     * Overwrite remote node with the file located at the given local path.
+     *
+     * @param string           $localPath  Local path of file to overwrite remote node
+     *                                     node with
+     * @param \CloudDrive\Node $remoteNode Remote node to overwrite
+     *
+     * @return array
+     */
     public function overwriteFile($localPath, Node $remoteNode)
     {
         $retval = [
@@ -326,6 +445,17 @@ class CloudDrive
         return $retval;
     }
 
+    /**
+     * Upload a local directory to Amazon Cloud Drive.
+     *
+     * @param string     $localPath      Local path of directory to upload
+     * @param string     $remoteFolder   Remote folder to place the directory in
+     * @param bool|false $overwrite      Flag to overwrite files if they exist remotely
+     * @param bool|false $outputProgress `echo` out progress of each file
+     *
+     * @return array
+     * @throws \Exception
+     */
     public function uploadDirectory($localPath, $remoteFolder, $overwrite = false, $outputProgress = false)
     {
         $localPath = realpath($localPath);
@@ -373,6 +503,16 @@ class CloudDrive
         return $retval;
     }
 
+    /**
+     * Upload a single file to Amazon Cloud Drive.
+     *
+     * @param string     $localPath  The local path to the file to upload
+     * @param string     $remotePath The remote folder to upload the file to
+     * @param bool|false $overwrite  Whether to overwrite the file if it already
+     *                               exists remotely
+     *
+     * @return array
+     */
     public function uploadFile($localPath, $remotePath, $overwrite = false)
     {
         $retval = [
