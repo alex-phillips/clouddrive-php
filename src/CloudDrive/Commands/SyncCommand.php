@@ -18,7 +18,7 @@ class SyncCommand extends BaseCommand
     protected function _execute()
     {
         $this->init();
-        $this->clouddrive->account->authorize();
-        $this->clouddrive->account->sync();
+        $this->clouddrive->getAccount()->authorize();
+        $this->clouddrive->getAccount()->sync();
     }
 }
