@@ -331,7 +331,7 @@ class CloudDrive
     {
         $results = $this->findNodesByName('ROOT');
         if (empty($results)) {
-            throw new \Exception("Node node by name 'ROOT' found in the database.");
+            throw new \Exception("No node by name 'ROOT' found in the database.");
         }
 
         foreach ($results as $result) {
