@@ -23,5 +23,6 @@ $app->command(new \CloudDrive\Commands\SyncCommand());
 $app->command(new \CloudDrive\Commands\ClearCacheCommand());
 $app->command(new \CloudDrive\Commands\UploadCommand());
 $app->command(new \CloudDrive\Commands\ListCommand());
+$app->command(new \CloudDrive\Commands\DownloadCommand());
 
 $app->run();

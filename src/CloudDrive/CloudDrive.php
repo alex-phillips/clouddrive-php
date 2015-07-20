@@ -25,7 +25,7 @@ class CloudDrive
     /**
      * @var \GuzzleHttp\Client
      */
-    private $client;
+    private $httpClient;
 
     /**
      * @var string
@@ -67,7 +67,7 @@ class CloudDrive
         $this->clientSecret = $clientSecret;
         $this->cache = $cacheStore;
 
-        $this->client = new Client();
+        $this->httpClient = new Client();
 
         if (is_null($account)) {
             $account = new Account($this->email, $this->clientId, $this->clientSecret, $this->cache);
@@ -177,7 +177,7 @@ class CloudDrive
             $parents = [$parents];
         }
 
-        $response = $this->client->post("{$this->account->getMetadataUrl()}nodes", [
+        $response = $this->httpClient->post("{$this->account->getMetadataUrl()}nodes", [
             'headers' => [
                 'Authorization' => "Bearer {$this->account->getToken()["access_token"]}",
             ],
@@ -195,6 +195,61 @@ class CloudDrive
             $retval['success'] = true;
             $this->cache->saveNode(new Node($retval['data']));
         }
+
+        return $retval;
+    }
+
+    /**
+     * Download contents of remote file node to local save path. If only the
+     * local directory is given, the file will be saved as its remote name.
+     *
+     * @param Node   $node     The remote node to download
+     * @param string $savePath The local path to save the contents to
+     *
+     * @return array
+     */
+    public function downloadFile($node, $savePath)
+    {
+        $retval = [
+            'success' => false,
+            'data' => []
+        ];
+
+        if (is_string($node)) {
+            if (!($match = $this->findNodeByPath($node)) && (!$match = $this->findNodeById($node))) {
+                $retval['data']['message'] = "Node node found with path or ID of $node";
+            }
+
+            $node = $match;
+        }
+
+        if (file_exists($savePath) && is_dir($savePath)) {
+            $savePath = rtrim($savePath, '/') . "/{$node['name']}";
+        }
+
+        $response = $this->httpClient->get("{$this->account->getContentUrl()}nodes/{$node['id']}/content", [
+            'headers' => [
+                'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
+            ],
+            'stream' => true,
+            'exceptions' => false,
+        ]);
+
+        if ($response->getStatusCode() !== 200) {
+            $retval['data'] = json_decode((string)$response->getBody(), true);
+
+            return $retval;
+        }
+
+        $retval['success'] = true;
+
+        $handle = fopen($savePath, 'a');
+        $body = $response->getBody();
+        while (!$body->eof()) {
+            fwrite($handle, $body->read(1024));
+        }
+
+        fclose($handle);
 
         return $retval;
     }
@@ -423,7 +478,7 @@ class CloudDrive
             'data' => [],
         ];
 
-        $response = $this->client->put("{$this->account->getContentUrl()}nodes/{$remoteNode['id']}/content", [
+        $response = $this->httpClient->put("{$this->account->getContentUrl()}nodes/{$remoteNode['id']}/content", [
             'headers' => [
                 'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
             ],
@@ -550,7 +605,7 @@ class CloudDrive
             return $this->overwriteFile($localPath, $response['data']['node']);
         }
 
-        $response = $this->client->post("{$this->account->getContentUrl()}nodes", [
+        $response = $this->httpClient->post("{$this->account->getContentUrl()}nodes", [
             'headers' => [
                 'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
             ],
