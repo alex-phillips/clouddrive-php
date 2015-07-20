@@ -137,7 +137,7 @@ class Account
 
         $this->token = new ParameterBag($config);
 
-        $scope = urlencode(implode(' ', $this->scope));
+        $scope = rawurlencode(implode(' ', $this->scope));
 
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
