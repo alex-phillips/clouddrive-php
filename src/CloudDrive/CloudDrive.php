@@ -319,7 +319,7 @@ class CloudDrive
     }
 
     /**
-     * Retrieve the associated `Account` object
+     * Retrieve the associated `Account` object.
      *
      * @return \CloudDrive\Account
      */
