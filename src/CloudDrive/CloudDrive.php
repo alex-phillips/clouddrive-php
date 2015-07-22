@@ -522,8 +522,11 @@ class CloudDrive
 
         $retval = [];
 
-        $di = new \RecursiveDirectoryIterator($localPath);
-        foreach (new \RecursiveDirectoryIterator($di) as $file) {
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($localPath),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach($files as $name => $file){
             if (is_dir($file)) {
                 continue;
             }
