@@ -42,7 +42,7 @@ abstract class BaseCommand extends Command
             throw new \RuntimeException("'HOME' environment variable must be set for Cloud Drive to properly run.");
         }
 
-        $this->configPath = rtrim($home, '/') . '/.cache/clouddrive/';
+        $this->configPath = rtrim($home, '/') . '/.cache/clouddrive-php/';
         if (!file_exists($this->configPath)) {
             mkdir($this->configPath, 0777, true);
         }
