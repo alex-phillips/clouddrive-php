@@ -18,7 +18,7 @@ class ClearCacheCommand extends BaseCommand
     protected function _execute()
     {
         $this->init();
-        $this->clouddrive->account->authorize();
-        $this->clouddrive->account->clearCache();
+        $this->clouddrive->getAccount()->authorize();
+        $this->clouddrive->getAccount()->clearCache();
     }
 }

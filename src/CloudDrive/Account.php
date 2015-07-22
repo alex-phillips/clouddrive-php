@@ -137,7 +137,7 @@ class Account
 
         $this->token = new ParameterBag($config);
 
-        $scope = urlencode(implode(' ', $this->scope));
+        $scope = rawurlencode(implode(' ', $this->scope));
 
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
@@ -158,12 +158,15 @@ class Account
                 return $response;
             }
 
-            $this->token = new ParameterBag($response["data"]);
+            $this->token->merge($response["data"]);
         } else if (time() - $this->token["last_authorized"] > $this->token["expires_in"]) {
             $response = $this->renewAuthorization();
             if (!$response["success"]) {
                 return $response;
             }
+
+            $this->token->merge($response['data']);
+            $this->save();
         }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
@@ -357,8 +360,6 @@ class Account
         if ($response->getStatusCode() === 200) {
             $retval["success"] = true;
             $retval["data"]["last_authorized"] = time();
-            $this->token->replace($retval['data']);
-            $this->save();
         }
 
         return $retval;
