@@ -13,8 +13,6 @@ if (file_exists(dirname(__FILE__) . '/../vendor/autoload.php')) {
     throw new Exception('Unable to find composer autoload.php file.');
 }
 
-define('CLI_ROOT', realpath(dirname(__FILE__) . '/../.cache') . '/');
-
 $app = new \Cilex\Application('CloudDrive', '0.1.0');
 
 $app->command(new \CloudDrive\Commands\MetadataCommand());

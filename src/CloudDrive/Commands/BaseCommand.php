@@ -37,7 +37,16 @@ abstract class BaseCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->configPath = CLI_ROOT;
+        $home = getenv('HOME');
+        if (!$home) {
+            throw new \RuntimeException("'HOME' environment variable must be set for Cloud Drive to properly run.");
+        }
+
+        $this->configPath = rtrim($home, '/') . '/.cache/clouddrive/';
+        if (!file_exists($this->configPath)) {
+            mkdir($this->configPath, 0777, true);
+        }
+
         $this->input = $input;
         $this->output = $output;
         $this->_execute();
