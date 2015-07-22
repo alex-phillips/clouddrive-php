@@ -46,6 +46,10 @@ abstract class BaseCommand extends Command
     protected function init()
     {
         $this->readConfig();
+        if (count($this->config) === 0) {
+            $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
+            exit;
+        }
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
             $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], new SQLite($this->config['email'], $this->configPath));
@@ -53,7 +57,6 @@ abstract class BaseCommand extends Command
                 $this->clouddrive = $clouddrive;
             } else {
                 $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
-
             }
         }
     }

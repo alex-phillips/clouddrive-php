@@ -21,7 +21,7 @@ class MetadataCommand extends BaseCommand
     protected function _execute()
     {
         $this->init();
-        $this->clouddrive->account->authorize();
+        $this->clouddrive->getAccount()->authorize();
 
         $path = $this->input->getArgument('path');
         $node = $this->clouddrive->findNodeByPath($path);
