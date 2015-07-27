@@ -17,12 +17,23 @@ use Utility\ParameterBag;
 abstract class BaseCommand extends Command
 {
     /**
+     * @var \CloudDrive\Cache
+     */
+    protected $cacheStore;
+
+    /**
      * @var \CloudDrive\CloudDrive
      */
     protected $clouddrive;
 
+    /**
+     * @var \Utility\ParameterBag
+     */
     protected $config;
 
+    /**
+     * @var string
+     */
     protected $configPath;
 
     /**
@@ -47,6 +58,8 @@ abstract class BaseCommand extends Command
             mkdir($this->configPath, 0777, true);
         }
 
+        $this->cacheStore = new \CloudDrive\Cache\SQLite($this->config['email'], $this->configPath);
+
         $this->input = $input;
         $this->output = $output;
         $this->_execute();
@@ -56,16 +69,15 @@ abstract class BaseCommand extends Command
     {
         $this->readConfig();
         if (count($this->config) === 0) {
-            $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
-            exit;
+            throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
-            $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], new SQLite($this->config['email'], $this->configPath));
+            $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], $this->cacheStore);
             if ($clouddrive->getAccount()->authorize()['success']) {
                 $this->clouddrive = $clouddrive;
             } else {
-                $this->output->writeln('Account has not been authorized. Please do so using the `init` command.');
+                throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
             }
         }
     }
