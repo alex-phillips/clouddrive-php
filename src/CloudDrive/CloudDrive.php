@@ -534,28 +534,36 @@ class CloudDrive
             $info = pathinfo($file);
             $remotePath = str_replace($localPath, $remoteFolder, $info['dirname']);
 
-            $response = $this->uploadFile($file->getPathname(), $remotePath, $overwrite);
+            $attempts = 0;
+            while (true) {
+                if ($attempts > 1) {
+                    throw new \Exception("Failed to upload file '{$file->getPathName()}' after reauthentication. Upload may take longer than the access token is valid for.");
+                }
+
+                $response = $this->uploadFile($file->getPathname(), $remotePath, $overwrite);
+
+                if ($response['success'] === false && $response['response_code'] === 401) {
+                    $auth = $this->account->authorize();
+                    if ($auth['success'] === false) {
+                        throw new \Exception("Failed to renew account authorization.");
+                    }
+
+                    $attempts++;
+                    continue;
+                }
+
+                break;
+            }
+
             if ($outputProgress === true) {
                 if ($response['success'] === true) {
                     echo "Successfully uploaded file $file: " . json_encode($response['data']) . "\n";
                 } else {
-                    echo "Failed to upload file $file: " . json_encode($response['data']) . "\n";
+                    echo "Failed to upload file $file: " . json_encode($response) . "\n";
                 }
             }
 
             $retval[] = $response;
-
-            /*
-             * Since uploading a directory can take a while (depending on number/size of files)
-             * we will check if we need to renew our authorization after each file upload to
-             * make sure our authentication doesn't expire.
-             */
-            if (time() - $this->account->getToken()['last_authorized'] > $this->account->getToken()['expires_in']) {
-                $response = $this->account->renewAuthorization();
-                if ($response['success'] === false) {
-                    throw new \Exception("Failed to renew account authorization.");
-                }
-            }
         }
 
         return $retval;
@@ -576,6 +584,7 @@ class CloudDrive
         $retval = [
             'success' => false,
             'data' => [],
+            'response_code' => null,
         ];
 
         $info = pathinfo($localPath);
@@ -632,6 +641,7 @@ class CloudDrive
         ]);
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
+        $retval['response_code'] = $response->getStatusCode();
 
         if ($response->getStatusCode() === 201) {
             $retval['success'] = true;
