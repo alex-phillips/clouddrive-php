@@ -70,7 +70,7 @@ abstract class BaseCommand extends Command
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
 
-        $this->cacheStore = new \CloudDrive\Cache\SQLite($this->config['email'], $this->configPath);
+        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
             $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], $this->cacheStore);
