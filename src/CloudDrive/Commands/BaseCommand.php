@@ -58,8 +58,6 @@ abstract class BaseCommand extends Command
             mkdir($this->configPath, 0777, true);
         }
 
-        $this->cacheStore = new \CloudDrive\Cache\SQLite($this->config['email'], $this->configPath);
-
         $this->input = $input;
         $this->output = $output;
         $this->_execute();
@@ -71,6 +69,8 @@ abstract class BaseCommand extends Command
         if (count($this->config) === 0) {
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
+
+        $this->cacheStore = new \CloudDrive\Cache\SQLite($this->config['email'], $this->configPath);
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
             $clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], $this->cacheStore);
