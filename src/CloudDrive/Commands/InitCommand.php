@@ -7,7 +7,6 @@
 
 namespace CloudDrive\Commands;
 
-use CloudDrive\Cache\MySQL;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use Symfony\Component\Console\Input\InputArgument;
@@ -52,7 +51,9 @@ class InitCommand extends BaseCommand
 
         $this->saveConfig();
 
+        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
         $this->clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], $this->cacheStore);
+
         $response = $this->clouddrive->getAccount()->authorize();
         if (!$response['success']) {
             $this->output->writeln($response['data']['message']);
