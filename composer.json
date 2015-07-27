@@ -4,7 +4,8 @@
     "require": {
         "guzzlehttp/guzzle": "^6.0",
         "alex-phillips/utilities": "~0.1",
-        "cilex/cilex": "^1.1"
+        "cilex/cilex": "^1.1",
+        "j4mie/idiorm": "^1.5"
     },
     "authors": [
         {
