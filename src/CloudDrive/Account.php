@@ -166,7 +166,6 @@ class Account
             }
 
             $this->token->merge($response['data']);
-            $this->save();
         }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
@@ -445,7 +444,7 @@ class Account
     {
         $params = [
             'includePurged' => "true",
-            'maxNodes' => 200,
+            'maxNodes' => 1000,
         ];
 
         while (true) {
