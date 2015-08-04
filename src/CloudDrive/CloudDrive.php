@@ -81,8 +81,9 @@ class CloudDrive
     public function createDirectoryPath($path)
     {
         $retval = [
-            'success' => true,
-            'data' => [],
+            'success'      => true,
+            'data'         => [],
+            'resonse_code' => null,
         ];
 
         $path = $this->getPathArray($path);
@@ -125,8 +126,9 @@ class CloudDrive
     public function createFolder($name, $parents = null)
     {
         $retval = [
-            'success' => false,
-            'data' => [],
+            'success'       => false,
+            'data'          => [],
+            'response_code' => null,
         ];
 
         if (is_null($parents)) {
@@ -151,7 +153,7 @@ class CloudDrive
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
-        if ($response->getStatusCode() === 201) {
+        if (($retval['response_code'] = $response->getStatusCode()) === 201) {
             $retval['success'] = true;
             (new Node($retval['data']))->save();
         }
@@ -505,9 +507,8 @@ class CloudDrive
         ]);
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
-        $retval['response_code'] = $response->getStatusCode();
 
-        if ($response->getStatusCode() === 201) {
+        if (($retval['response_code'] = $response->getStatusCode()) === 201) {
             $retval['success'] = true;
             (new Node($retval['data']))->save();
         }
