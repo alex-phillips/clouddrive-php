@@ -14,7 +14,7 @@ class TrashCommand extends BaseCommand
 {
     protected function configure()
     {
-        $this->setName('trash')
+        $this->setName('rm')
             ->setDescription('Move a remote Node to the trash')
             ->addArgument('remote_path', InputArgument::REQUIRED, 'The remote path of the node');
     }
