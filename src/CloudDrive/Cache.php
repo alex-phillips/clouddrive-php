@@ -17,7 +17,7 @@ interface Cache
     /**
      * Delete all nodes from the cache.
      *
-     * @return mixed
+     * @return bool
      */
     public function deleteAllNodes();
 
@@ -26,7 +26,7 @@ interface Cache
      *
      * @param string $id
      *
-     * @return mixed
+     * @return bool
      */
     public function deleteNodeById($id);
 
@@ -35,7 +35,7 @@ interface Cache
      *
      * @param string $id
      *
-     * @return mixed
+     * @return \CloudDrive\Node|null
      */
     public function findNodeById($id);
 
@@ -44,7 +44,7 @@ interface Cache
      *
      * @param string $md5
      *
-     * @return mixed
+     * @return \CloudDrive\Node|null
      */
     public function findNodeByMd5($md5);
 
@@ -53,7 +53,7 @@ interface Cache
      *
      * @param string $name
      *
-     * @return mixed
+     * @return array
      */
     public function findNodesByName($name);
 
@@ -62,7 +62,7 @@ interface Cache
      *
      * @param Node $node
      *
-     * @return mixed
+     * @return array
      */
     public function getNodeChildren(Node $node);
 
@@ -71,7 +71,7 @@ interface Cache
      *
      * @param string $email
      *
-     * @return mixed
+     * @return array
      */
     public function loadAccountConfig($email);
 
@@ -80,7 +80,7 @@ interface Cache
      *
      * @param Account $account
      *
-     * @return mixed
+     * @return bool
      */
     public function saveAccountConfig(Account $account);
 
@@ -89,7 +89,7 @@ interface Cache
      *
      * @param Node $node
      *
-     * @return mixed
+     * @return bool
      */
     public function saveNode(Node $node);
 }
