@@ -7,6 +7,7 @@
 
 namespace CloudDrive\Commands;
 
+use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
 class MetadataCommand extends BaseCommand
@@ -18,13 +19,13 @@ class MetadataCommand extends BaseCommand
             ->addArgument('path', InputArgument::REQUIRED, 'The remote path of the node');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();
 
         $path = $this->input->getArgument('path');
-        $node = $this->clouddrive->findNodeByPath($path);
+        $node = Node::loadByPath($path);
 
         if (is_null($node)) {
             $this->output->writeln('Remote file path does not exist.');

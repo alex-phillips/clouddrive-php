@@ -20,7 +20,7 @@ class UploadCommand extends BaseCommand
             ->addOption('overwrite', 'o', null, 'Overwrite remote file if file exists and does not match local copy');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();

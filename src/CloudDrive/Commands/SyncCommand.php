@@ -15,7 +15,7 @@ class SyncCommand extends BaseCommand
             ->setDescription('Sync the local cache with Amazon CloudDrive');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();
