@@ -7,6 +7,7 @@
 
 namespace CloudDrive\Commands;
 
+use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
 class ListCommand extends BaseCommand
@@ -18,26 +19,26 @@ class ListCommand extends BaseCommand
             ->addArgument('remote_path', InputArgument::OPTIONAL, 'The remote directory to list');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();
 
         $remotePath = $this->input->getArgument('remote_path') ?: '';
 
-        $node = $this->clouddrive->findNodeByPath($remotePath);
+        $node = Node::loadByPath($remotePath);
 
         if (!$node) {
-            $this->output->writeln("Remote path '$remotePath' does not exist.");
-
-            return;
+            throw new \Exception("Remote path '$remotePath' does not exist.");
         }
 
-        $nodes = $this->clouddrive->getChildren($node);
+        $nodes = $node->getChildren();
 
         foreach ($nodes as $node) {
             $modified = new \DateTime($node['modifiedDate']);
-            $this->output->writeln(sprintf("%s  %s  %s\t %s", $node['id'], $modified->format("M d y H:m"), $node['kind'], $node['name']));
+            $this->output->writeln(
+                sprintf("%s  %s  %s %s\t %s", $node['id'], $modified->format("M d y H:m"), $node['status'], $node['kind'], $node['name'])
+            );
         }
     }
 }

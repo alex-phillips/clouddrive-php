@@ -15,7 +15,7 @@ class ClearCacheCommand extends BaseCommand
             ->setDescription('Clear the local cache');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();

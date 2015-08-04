@@ -19,7 +19,7 @@ class DownloadCommand extends BaseCommand
             ->addArgument('local_path', InputArgument::OPTIONAL, 'The path to save the file');
     }
 
-    protected function _execute()
+    protected function main()
     {
         $this->init();
         $this->clouddrive->getAccount()->authorize();

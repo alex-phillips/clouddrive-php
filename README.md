@@ -1,5 +1,7 @@
 # CloudDrive PHP
 
+NOTE: This project is in active development.
+
 CloudDrive-PHP is an SDK and CLI application for interacting with Amazon's [Cloud Drive](https://www.amazon.com/clouddrive/home).
 
 The project originally started out as an application to manage storage in Cloud Drive from the command line but figured other's may want to take advantage of the API calls and develop their own software using it, so I made sure to build the library so it can be built upon and make the CLI application an included tool that could also be used as an example for implementation.
