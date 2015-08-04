@@ -38,11 +38,6 @@ class CloudDrive
     private $clientSecret;
 
     /**
-     * @var \CloudDrive\Cache
-     */
-    private $cache;
-
-    /**
      * @var string
      */
     private $email;
@@ -65,48 +60,13 @@ class CloudDrive
         $this->email = $email;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->cache = $cacheStore;
-
         $this->httpClient = new Client();
 
         if (is_null($account)) {
-            $account = new Account($this->email, $this->clientId, $this->clientSecret, $this->cache);
+            $account = new Account($this->email, $this->clientId, $this->clientSecret, $cacheStore);
         }
 
         $this->account = $account;
-    }
-
-    /**
-     * Build and return the remote directory path of the given node.
-     *
-     * @param \CloudDrive\Node $node The node to build the path for
-     *
-     * @return string
-     * @throws \Exception
-     */
-    private function buildNodePath(Node $node)
-    {
-        $path = [];
-
-        while (true) {
-            $path[] = $node["name"];
-            if ($node["isRoot"] === true) {
-                break;
-            }
-
-            $node = $this->findNodeById($node["parents"][0]);
-            if (is_null($node)) {
-                throw new \Exception("No parent node found with ID {$node['parents'][0]}.");
-            }
-
-            if ($node['isRoot'] === true) {
-                break;
-            }
-        }
-
-        $path = array_reverse($path);
-
-        return implode('/', $path);
     }
 
     /**
@@ -126,12 +86,12 @@ class CloudDrive
         ];
 
         $path = $this->getPathArray($path);
-        $previousNode = $this->getRootNode();
+        $previousNode = Node::loadRoot();
 
         $match = null;
         foreach ($path as $index => $folder) {
             $xary = array_slice($path, 0, $index + 1);
-            if (!($match = $this->findNodeByPath(implode('/', $xary)))) {
+            if (!($match = Node::loadByPath(implode('/', $xary)))) {
                 $response = $this->createFolder($folder, $previousNode['id']);
                 if (!$response['success']) {
                     return $response;
@@ -170,7 +130,7 @@ class CloudDrive
         ];
 
         if (is_null($parents)) {
-            $parents = $this->getRootNode()['id'];
+            $parents = Node::loadRoot()['id'];
         }
 
         if (!is_array($parents)) {
@@ -193,7 +153,7 @@ class CloudDrive
 
         if ($response->getStatusCode() === 201) {
             $retval['success'] = true;
-            $this->cache->saveNode(new Node($retval['data']));
+            (new Node($retval['data']))->save();
         }
 
         return $retval;
@@ -216,8 +176,10 @@ class CloudDrive
         ];
 
         if (is_string($node)) {
-            if (!($match = $this->findNodeByPath($node)) && (!$match = $this->findNodeById($node))) {
-                $retval['data']['message'] = "Node node found with path or ID of $node";
+            if (!($match = Node::loadByPath($node)) && (!$match = Node::loadById($node))) {
+                $retval['data']['message'] = "No node found with path or ID of $node";
+
+                return $retval;
             }
 
             $node = $match;
@@ -255,70 +217,6 @@ class CloudDrive
     }
 
     /**
-     * Find and return nodes that have the given MD5.
-     *
-     * @param string $md5 MD5 checksum of the node
-     *
-     * @return mixed
-     */
-    public function findNodeByMd5($md5)
-    {
-        return $this->cache->findNodeByMd5($md5);
-    }
-
-    /**
-     * Find and return any nodes that match the given name.
-     *
-     * @param string $name Name of the node to find
-     *
-     * @return mixed
-     */
-    public function findNodesByName($name)
-    {
-        return $this->cache->findNodesByName($name);
-    }
-
-    /**
-     * Find and return the node matching the given ID.
-     *
-     * @param string $id ID of the node
-     *
-     * @return mixed
-     */
-    public function findNodeById($id)
-    {
-        return $this->cache->findNodeById($id);
-    }
-
-    /**
-     * @param $path
-     *
-     * @return null|\CloudDrive\Node
-     * @throws \Exception
-     */
-    public function findNodeByPath($path)
-    {
-        $path = trim($path, '/');
-        if (!$path) {
-            return $this->getRootNode();
-        }
-
-        $info = pathinfo($path);
-        $nodes = $this->findNodesByName($info['basename']);
-        if (empty($nodes)) {
-            return null;
-        }
-
-        foreach ($nodes as $node) {
-            if ($this->buildNodePath($node) === $path) {
-                return $node;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Retrieve the associated `Account` object.
      *
      * @return \CloudDrive\Account
@@ -326,22 +224,6 @@ class CloudDrive
     public function getAccount()
     {
         return $this->account;
-    }
-
-    /**
-     * Get all children of the given `Node`.
-     *
-     * @param string|\CloudDrive\Node $node The node to get children of
-     *
-     * @return mixed
-     */
-    public function getChildren($node)
-    {
-        if (!($node instanceof Node)) {
-            $node = $this->findNodeByPath($node);
-        }
-
-        return $this->cache->getNodeChildren($node);
     }
 
     /**
@@ -377,28 +259,6 @@ class CloudDrive
     }
 
     /**
-     * Return the root node.
-     *
-     * @return \CloudDrive\Node
-     * @throws \Exception
-     */
-    public function getRootNode()
-    {
-        $results = $this->findNodesByName('ROOT');
-        if (empty($results)) {
-            throw new \Exception("No node by name 'ROOT' found in the database.");
-        }
-
-        foreach ($results as $result) {
-            if ($result["isRoot"] === true) {
-                return $result;
-            }
-        }
-
-        throw new \Exception("Unable to find root node.");
-    }
-
-    /**
      * Determine if a node matching the given path exists remotely. If a local
      * path is given, the MD5 will be compared as well.
      *
@@ -410,10 +270,10 @@ class CloudDrive
      */
     public function nodeExists($remotePath, $localPath = null)
     {
-        if (is_null($file = $this->findNodeByPath($remotePath))) {
+        if (is_null($file = Node::loadByPath($remotePath))) {
             if (!is_null($localPath)) {
-                if (!is_null($file = $this->findNodeByMd5(md5_file($localPath)))) {
-                    $path = $this->buildNodePath($file);
+                if (!is_null($file = Node::loadByMd5(md5_file($localPath)))) {
+                    $path = $file->getPath();
 
                     return [
                         'success' => true,
@@ -526,7 +386,8 @@ class CloudDrive
             new \RecursiveDirectoryIterator($localPath),
             \RecursiveIteratorIterator::SELF_FIRST
         );
-        foreach($files as $name => $file){
+
+        foreach ($files as $name => $file) {
             if (is_dir($file)) {
                 continue;
             }
@@ -537,7 +398,10 @@ class CloudDrive
             $attempts = 0;
             while (true) {
                 if ($attempts > 1) {
-                    throw new \Exception("Failed to upload file '{$file->getPathName()}' after reauthentication. Upload may take longer than the access token is valid for.");
+                    throw new \Exception(
+                        "Failed to upload file '{$file->getPathName()}' after reauthentication. " .
+                        "Upload may take longer than the access token is valid for."
+                    );
                 }
 
                 $response = $this->uploadFile($file->getPathname(), $remotePath, $overwrite);
@@ -645,7 +509,7 @@ class CloudDrive
 
         if ($response->getStatusCode() === 201) {
             $retval['success'] = true;
-            $this->cache->saveNode(new Node($retval['data']));
+            (new Node($retval['data']))->save();
         }
 
         return $retval;
