@@ -12,12 +12,16 @@ use CloudDrive\Cache;
 use CloudDrive\Node;
 use ORM;
 
+/**
+ * The SQL abstract class is what all SQL database cache classes will inherit
+ * from.
+ *
+ * @package CloudDrive\Cache
+ */
 abstract class SQL implements Cache
 {
     /**
-     * Delete all nodes from the cache.
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function deleteAllNodes()
     {
@@ -25,11 +29,7 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Delete node with the given ID from the cache.
-     *
-     * @param string $id
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function deleteNodeById($id)
     {
@@ -42,11 +42,7 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Find the node by the given ID in the cache.
-     *
-     * @param string $id
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function findNodeById($id)
     {
@@ -61,11 +57,7 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Find the node by the given MD5 in the cache.
-     *
-     * @param string $md5
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function findNodeByMd5($md5)
     {
@@ -80,15 +72,15 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Retrieve all node matching the given name in the cache.
-     *
-     * @param string $name
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function findNodesByName($name)
     {
-        $nodes = ORM::for_table('nodes')->select('raw_data')->where('name', $name)->find_many();
+        $nodes = ORM::for_table('nodes')
+            ->select('raw_data')
+            ->where('name', $name)
+            ->find_many();
+
         foreach ($nodes as &$node) {
             $node = new Node(
                 json_decode($node->as_array()['raw_data'], true)
@@ -99,11 +91,7 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Retrieve all nodes who have the given node as their parent.
-     *
-     * @param Node $node
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function getNodeChildren(Node $node)
     {
@@ -122,15 +110,14 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Retrieve the config for the account matched with the given email.
-     *
-     * @param string $email
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function loadAccountConfig($email)
     {
-        $config = ORM::for_table('configs')->where('email', $email)->find_one();
+        $config = ORM::for_table('configs')
+            ->where('email', $email)
+            ->find_one();
+
         if (!$config) {
             return null;
         }
@@ -139,11 +126,7 @@ abstract class SQL implements Cache
     }
 
     /**
-     * Save the config for the provided account.
-     *
-     * @param Account $account
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function saveAccountConfig(Account $account)
     {
@@ -152,24 +135,23 @@ abstract class SQL implements Cache
             $config = ORM::for_table('configs')->create();
         }
 
-        $config->email = $account->getEmail();
-        $config->token_type = $account->getToken()['token_type'];
-        $config->expires_in = $account->getToken()['expires_in'];
-        $config->refresh_token = $account->getToken()['refresh_token'];
-        $config->access_token = $account->getToken()['access_token'];
-        $config->last_authorized = $account->getToken()['last_authorized'];
-        $config->content_url = $account->getContentUrl();
-        $config->metadata_url = $account->getMetadataUrl();
-        $config->checkpoint = $account->getCheckpoint();
-        $config->save();
+        $config->set([
+            'email'           => $account->getEmail(),
+            'token_type'      => $account->getToken()['token_type'],
+            'expires_in'      => $account->getToken()['expires_in'],
+            'refresh_token'   => $account->getToken()['refresh_token'],
+            'access_token'    => $account->getToken()['access_token'],
+            'last_authorized' => $account->getToken()['last_authorized'],
+            'content_url'     => $account->getContentUrl(),
+            'metadata_url'    => $account->getMetadataUrl(),
+            'checkpoint'      => $account->getCheckpoint(),
+        ]);
+
+        return $config->save();
     }
 
     /**
-     * Save the given node into the cache.
-     *
-     * @param Node $node
-     *
-     * @return mixed
+     * {@inheritdoc}
      */
     public function saveNode(Node $node)
     {
@@ -182,15 +164,18 @@ abstract class SQL implements Cache
             $n = ORM::for_table('nodes')->create();
         }
 
-        $n->id = $node['id'];
-        $n->name = $node['name'];
-        $n->kind = $node['kind'];
-        $n->md5 = $node['contentProperties']['md5'];
-        $n->status = $node['status'];
-        $n->parents = implode(',', $node['parents']);
-        $n->created = $node['createdDate'];
-        $n->modified = $node['modifiedDate'];
-        $n->raw_data = json_encode($node);
-        $n->save();
+        $n->set([
+            'id'       => $node['id'],
+            'name'     => $node['name'],
+            'kind'     => $node['kind'],
+            'md5'      => $node['contentProperties']['md5'],
+            'status'   => $node['status'],
+            'parents'  => implode(',', $node['parents']),
+            'created'  => $node['createdDate'],
+            'modified' => $node['modifiedDate'],
+            'raw_data' => json_encode($node),
+        ]);
+
+        return $n->save();
     }
 }
