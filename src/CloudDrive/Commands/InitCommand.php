@@ -23,7 +23,7 @@ class InitCommand extends BaseCommand
             ->addOption('auth-url', 'a', InputArgument::OPTIONAL, 'The redirect URL used during initial authorization');
     }
 
-    protected function _execute()
+    protected function main()
     {
         if (!file_exists($this->configPath)) {
             mkdir($this->configPath, 0777, true);
@@ -52,7 +52,12 @@ class InitCommand extends BaseCommand
         $this->saveConfig();
 
         $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
-        $this->clouddrive = new CloudDrive($this->config['email'], $this->config['client-id'], $this->config['client-secret'], $this->cacheStore);
+        $this->clouddrive = new CloudDrive(
+            $this->config['email'],
+            $this->config['client-id'],
+            $this->config['client-secret'],
+            $this->cacheStore
+        );
 
         $response = $this->clouddrive->getAccount()->authorize();
         if (!$response['success']) {
@@ -69,7 +74,9 @@ class InitCommand extends BaseCommand
                     return;
                 }
 
-                $this->output->writeln('Failed to authenticate with Amazon Clouddrive: ' . json_encode($response['data']));
+                $this->output->writeln(
+                    'Failed to authenticate with Amazon Clouddrive: ' . json_encode($response['data'])
+                );
             }
         } else {
             $this->output->writeln('That user is already authenticated with Amazon CloudDrive.');
