@@ -7,6 +7,7 @@
 
 namespace CloudDrive\Commands;
 
+use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
 class MkdirCommand extends BaseCommand
@@ -23,6 +24,11 @@ class MkdirCommand extends BaseCommand
         $this->init();
 
         $remotePath = $this->input->getArgument('remote_path');
+
+        if ($node = Node::loadByPath($remotePath)) {
+            throw new \Exception("Node already exists at remote path '$remotePath'. Make sure it's not in the trash.");
+        }
+
         $result = $this->clouddrive->createDirectoryPath($remotePath);
 
         if (!$result['success']) {
