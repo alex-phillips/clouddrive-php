@@ -22,5 +22,8 @@ $app->command(new \CloudDrive\Commands\ClearCacheCommand());
 $app->command(new \CloudDrive\Commands\UploadCommand());
 $app->command(new \CloudDrive\Commands\ListCommand());
 $app->command(new \CloudDrive\Commands\DownloadCommand());
+$app->command(new \CloudDrive\Commands\MkdirCommand());
+$app->command(new \CloudDrive\Commands\TrashCommand());
+$app->command(new \CloudDrive\Commands\RestoreCommand());
 
 $app->run();
