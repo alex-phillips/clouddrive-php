@@ -25,5 +25,10 @@ $app->command(new \CloudDrive\Commands\DownloadCommand());
 $app->command(new \CloudDrive\Commands\MkdirCommand());
 $app->command(new \CloudDrive\Commands\TrashCommand());
 $app->command(new \CloudDrive\Commands\RestoreCommand());
+$app->command(new \CloudDrive\Commands\RenameCommand());
+$app->command(new \CloudDrive\Commands\ListTrashCommand());
+$app->command(new \CloudDrive\Commands\ResolveCommand());
+$app->command(new \CloudDrive\Commands\MoveCommand());
+$app->command(new \CloudDrive\Commands\FindCommand());
 
 $app->run();
