@@ -44,6 +44,25 @@ abstract class SQL implements Cache
     /**
      * {@inheritdoc}
      */
+    public function filterNodes(array $filters)
+    {
+        $nodes = ORM::for_table('nodes')
+            ->select('raw_data')
+            ->where_any_is($filters)
+            ->find_many();
+
+        foreach ($nodes as &$node) {
+            $node = new Node(
+                json_decode($node->as_array()['raw_data'], true)
+            );
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function findNodeById($id)
     {
         $result = ORM::for_table('nodes')->select('raw_data')->where('id', $id)->find_one();
@@ -177,5 +196,23 @@ abstract class SQL implements Cache
         ]);
 
         return $n->save();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function searchNodesByName($name)
+    {
+        $results = ORM::for_table('nodes')
+            ->where_like('name', "%$name%")
+            ->find_many();
+
+        foreach ($results as &$result) {
+            $result = new Node(
+                json_decode($result['raw_data'], true)
+            );
+        }
+
+        return $results;
     }
 }

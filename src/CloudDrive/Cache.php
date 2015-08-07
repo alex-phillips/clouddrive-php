@@ -31,6 +31,15 @@ interface Cache
     public function deleteNodeById($id);
 
     /**
+     * Find nodes in the local cache based on query filters.
+     *
+     * @param array $filters
+     *
+     * @return array
+     */
+    public function filterNodes(array $filters);
+
+    /**
      * Find the node by the given ID in the cache.
      *
      * @param string $id
@@ -92,4 +101,13 @@ interface Cache
      * @return bool
      */
     public function saveNode(Node $node);
+
+    /**
+     * Search for nodes in the local cache that contain a string in their name.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    public function searchNodesByName($name);
 }
