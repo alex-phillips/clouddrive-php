@@ -52,6 +52,15 @@ abstract class BaseCommand extends Command
      */
     protected $output;
 
+    protected function convertFilesize($bytes, $decimals = 2)
+    {
+        $bytes = $bytes ?: 0;
+        $size = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        $factor = floor((strlen($bytes) - 1) / 3);
+
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$size[$factor];
+    }
+
     /**
      * @param \Symfony\Component\Console\Input\InputInterface   $input
      * @param \Symfony\Component\Console\Output\OutputInterface $output
@@ -107,6 +116,24 @@ abstract class BaseCommand extends Command
     }
 
     abstract protected function main();
+
+    protected function listNodes(array $nodes)
+    {
+        foreach ($nodes as $node) {
+            $modified = new \DateTime($node['modifiedDate']);
+            $this->output->writeln(
+                sprintf(
+                    "%s  %s  %s %s %s %s",
+                    $node['id'],
+                    $modified->format("M d y H:m"),
+                    str_pad($node['status'], 10),
+                    str_pad($node['kind'], 7),
+                    str_pad($this->convertFilesize($node['contentProperties']['size']), 9),
+                    $node['name']
+                )
+            );
+        }
+    }
 
     /**
      *
