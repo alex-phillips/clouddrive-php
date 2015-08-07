@@ -16,7 +16,9 @@ class MetadataCommand extends BaseCommand
     {
         $this->setName('metadata')
             ->setDescription('Retrieve the metadata (JSON) of a node by its path')
-            ->addArgument('path', InputArgument::REQUIRED, 'The remote path of the node');
+            ->addArgument('path', InputArgument::REQUIRED, 'The remote path of the node')
+            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path')
+            ->addOption('pretty', 'p', null, 'Output the metadata in easy-to-read JSON');
     }
 
     protected function main()
@@ -25,10 +27,19 @@ class MetadataCommand extends BaseCommand
         $this->clouddrive->getAccount()->authorize();
 
         $path = $this->input->getArgument('path');
-        $node = Node::loadByPath($path);
 
-        if (is_null($node)) {
-            $this->output->writeln('Remote file path does not exist.');
+        if ($this->input->getOption('id')) {
+            if (!($node = Node::loadById($path))) {
+                throw new \Exception("No node exists with ID '$path'.");
+            }
+        } else {
+            if (!($node = Node::loadByPath($path))) {
+                throw new \Exception("No node exists at remote path '$path'.");
+            }
+        }
+
+        if ($this->input->getOption('pretty')) {
+            $this->output->writeln(json_encode($node, JSON_PRETTY_PRINT));
         } else {
             $this->output->writeln(json_encode($node));
         }
