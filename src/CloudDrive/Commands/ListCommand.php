@@ -16,7 +16,8 @@ class ListCommand extends BaseCommand
     {
         $this->setName('ls')
             ->setDescription('List all remote nodes inside of a specified directory')
-            ->addArgument('remote_path', InputArgument::OPTIONAL, 'The remote directory to list');
+            ->addArgument('remote_path', InputArgument::OPTIONAL, 'The remote directory to list')
+            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
     }
 
     protected function main()
@@ -26,19 +27,16 @@ class ListCommand extends BaseCommand
 
         $remotePath = $this->input->getArgument('remote_path') ?: '';
 
-        $node = Node::loadByPath($remotePath);
-
-        if (!$node) {
-            throw new \Exception("Remote path '$remotePath' does not exist.");
+        if ($this->input->getOption('id')) {
+            if (!($node = Node::loadById($remotePath))) {
+                throw new \Exception("No node exists with ID '$remotePath'.");
+            }
+        } else {
+            if (!($node = Node::loadByPath($remotePath))) {
+                throw new \Exception("No node exists at remote path '$remotePath'.");
+            }
         }
 
-        $nodes = $node->getChildren();
-
-        foreach ($nodes as $node) {
-            $modified = new \DateTime($node['modifiedDate']);
-            $this->output->writeln(
-                sprintf("%s  %s  %s %s\t %s", $node['id'], $modified->format("M d y H:m"), $node['status'], $node['kind'], $node['name'])
-            );
-        }
+        $this->listNodes($node->getChildren());
     }
 }

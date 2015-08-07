@@ -16,7 +16,8 @@ class TrashCommand extends BaseCommand
     {
         $this->setName('rm')
             ->setDescription('Move a remote Node to the trash')
-            ->addArgument('remote_path', InputArgument::REQUIRED, 'The remote path of the node');
+            ->addArgument('remote_path', InputArgument::REQUIRED, 'The remote path of the node')
+            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
     }
 
     protected function main()
@@ -24,10 +25,15 @@ class TrashCommand extends BaseCommand
         $this->init();
 
         $remotePath = $this->input->getArgument('remote_path');
-        $node = Node::loadByPath($remotePath);
 
-        if (!($node instanceof Node)) {
-            throw new \Exception("No node exists at remote path '$remotePath'.");
+        if ($this->input->getOption('id')) {
+            if (!($node = Node::loadById($remotePath))) {
+                throw new \Exception("No node exists with ID '$remotePath'.");
+            }
+        } else {
+            if (!($node = Node::loadByPath($remotePath))) {
+                throw new \Exception("No node exists at remote path '$remotePath'.");
+            }
         }
 
         $result = $node->trash();
