@@ -12,13 +12,15 @@ class ClearCacheCommand extends BaseCommand
     protected function configure()
     {
         $this->setName('clearcache')
+            ->setAliases([
+                'clear-cache',
+            ])
             ->setDescription('Clear the local cache');
     }
 
     protected function main()
     {
         $this->init();
-        $this->clouddrive->getAccount()->authorize();
         $this->clouddrive->getAccount()->clearCache();
     }
 }
