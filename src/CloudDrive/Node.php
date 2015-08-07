@@ -63,6 +63,98 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Download contents of `Node` to local save path. If only the
+     * local directory is given, the file will be saved as its remote name.
+     *
+     * @param null $savePath
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function download($savePath = null)
+    {
+        $retval = [
+            'success' => false,
+            'data' => []
+        ];
+
+        if (is_null($savePath)) {
+            $savePath = getcwd();
+        }
+
+        if (file_exists($savePath) && is_dir($savePath)) {
+            $savePath = rtrim($savePath, '/') . "/{$this['name']}";
+        }
+
+        $response = self::$httpClient->get(self::$account->getContentUrl() . "nodes/{$this['id']}/content", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+            ],
+            'stream' => true,
+            'exceptions' => false,
+        ]);
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() !== 200) {
+            return $retval;
+        }
+
+        $retval['success'] = true;
+
+        $handle = @fopen($savePath, 'a');
+
+        if (!$handle) {
+            throw new \Exception("Unable to open file at '$savePath'. Make sure the directory exists.");
+        }
+
+        $body = $response->getBody();
+        while (!$body->eof()) {
+            fwrite($handle, $body->read(1024));
+        }
+
+        fclose($handle);
+
+        return $retval;
+    }
+
+    /**
+     * Search for nodes in the local cache by filters.
+     *
+     * @param array $filters
+     *
+     * @return array
+     */
+    public static function filter(array $filters)
+    {
+        return self::$cacheStore->filterNodes($filters);
+    }
+
+    /**
+     * Retrieve `Node` that matches the given MD5 checksum.
+     *
+     * @param string $md5
+     *
+     * @return Node|null
+     */
+    public static function findNodeByMd5($md5)
+    {
+        return self::$cacheStore->findNodeByMd5($md5);
+    }
+
+    /**
+     * Find all nodes whose name matches the given string.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    public static function findNodesByName($name)
+    {
+        return self::$cacheStore->findNodesByName($name);
+    }
+
+    /**
      * Get all children of the given `Node`.
      *
      * @return array
@@ -126,6 +218,36 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Returns whether the `Node` is an asset or not.
+     *
+     * @return bool
+     */
+    public function isAsset()
+    {
+        return $this['kind'] === 'ASSET';
+    }
+
+    /**
+     * Returns whether the `Node` is a file or not.
+     *
+     * @return bool
+     */
+    public function isFile()
+    {
+        return $this['kind'] === 'FILE';
+    }
+
+    /**
+     * Returns whether the `Node` is a folder or not.
+     *
+     * @return bool
+     */
+    public function isFolder()
+    {
+        return $this['kind'] === 'FOLDER';
+    }
+
+    /**
      * Load a `Node` given an ID, MD5, or remote path.
      *
      * @param string $param Parameter to find the `Node` by: ID, MD5, or path
@@ -136,9 +258,7 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     {
         if (!($node = self::loadById($param))) {
             if (!($node = self::loadByMd5($param))) {
-                if (!($node = self::loadByPath($param))) {
-                    $node = null;
-                }
+                $node = self::loadByPath($param);
             }
         }
 
@@ -222,6 +342,123 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Move a FILE or FOLDER `Node` to a new remote location.
+     *
+     * @param \CloudDrive\Node $newFolder
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function move(Node $newFolder)
+    {
+        if (!$newFolder->isFolder()) {
+            throw new \Exception("New destination node is not a folder.");
+        }
+
+        if (!$this->isFile() && !$this->isFolder()) {
+            throw new \Exception("Moving a node can only be performed on FILE and FOLDER kinds.");
+        }
+
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = self::$httpClient->post(self::$account->getMetadataUrl() . "nodes/{$newFolder['id']}/children", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+            ],
+            'json' => [
+                'fromParent' => $this['parents'][0],
+                'childId' => $this['id'],
+            ],
+            'exceptions' => false,
+        ]);
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+            $this->replace($retval['data']);
+            $this->save();
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Replace file contents of the `Node` with the file located at the given
+     * local path.
+     *
+     * @param string $localPath
+     *
+     * @return array
+     */
+    public function overwrite($localPath)
+    {
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = self::$httpClient->put(self::$account->getContentUrl() . "nodes/{$this['id']}/content", [
+            'headers'    => [
+                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+            ],
+            'multipart'  => [
+                [
+                    'name'     => 'content',
+                    'contents' => fopen($localPath, 'r'),
+                ],
+            ],
+            'exceptions' => false,
+        ]);
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Modify the name of a remote `Node`.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    public function rename($name)
+    {
+        $retval = [
+            'success' => false,
+            'data' => [],
+        ];
+
+        $response = self::$httpClient->patch(self::$account->getMetadataUrl() . "nodes/{$this['id']}", [
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+            ],
+            'json' => [
+                'name' => $name,
+            ],
+            'exceptions' => false,
+        ]);
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+            $this->replace($retval['data']);
+            $this->save();
+        }
+
+        return $retval;
+    }
+
+    /**
      * Restore the `Node` from the trash.
      *
      * @return array
@@ -265,6 +502,18 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     public function save()
     {
         return self::$cacheStore->saveNode($this);
+    }
+
+    /**
+     * Find all nodes that contain a string in the name.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    public static function searchNodesByName($name)
+    {
+        return self::$cacheStore->searchNodesByName($name);
     }
 
     /**
