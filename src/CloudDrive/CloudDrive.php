@@ -139,17 +139,20 @@ class CloudDrive
             $parents = [$parents];
         }
 
-        $response = $this->httpClient->post("{$this->account->getMetadataUrl()}nodes", [
-            'headers' => [
-                'Authorization' => "Bearer {$this->account->getToken()["access_token"]}",
-            ],
-            'json' => [
-                'name' => $name,
-                'parents' => $parents,
-                'kind' => 'FOLDER',
-            ],
-            'exceptions' => false,
-        ]);
+        $response = $this->httpClient->post(
+            "{$this->account->getMetadataUrl()}nodes",
+            [
+                'headers'    => [
+                    'Authorization' => "Bearer {$this->account->getToken()["access_token"]}",
+                ],
+                'json'       => [
+                    'name'    => $name,
+                    'parents' => $parents,
+                    'kind'    => 'FOLDER',
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -157,63 +160,6 @@ class CloudDrive
             $retval['success'] = true;
             (new Node($retval['data']))->save();
         }
-
-        return $retval;
-    }
-
-    /**
-     * Download contents of remote file node to local save path. If only the
-     * local directory is given, the file will be saved as its remote name.
-     *
-     * @param Node   $node     The remote node to download
-     * @param string $savePath The local path to save the contents to
-     *
-     * @return array
-     */
-    public function downloadFile($node, $savePath)
-    {
-        $retval = [
-            'success' => false,
-            'data' => []
-        ];
-
-        if (is_string($node)) {
-            if (!($match = Node::loadByPath($node)) && (!$match = Node::loadById($node))) {
-                $retval['data']['message'] = "No node found with path or ID of $node";
-
-                return $retval;
-            }
-
-            $node = $match;
-        }
-
-        if (file_exists($savePath) && is_dir($savePath)) {
-            $savePath = rtrim($savePath, '/') . "/{$node['name']}";
-        }
-
-        $response = $this->httpClient->get("{$this->account->getContentUrl()}nodes/{$node['id']}/content", [
-            'headers' => [
-                'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
-            ],
-            'stream' => true,
-            'exceptions' => false,
-        ]);
-
-        if ($response->getStatusCode() !== 200) {
-            $retval['data'] = json_decode((string)$response->getBody(), true);
-
-            return $retval;
-        }
-
-        $retval['success'] = true;
-
-        $handle = fopen($savePath, 'a');
-        $body = $response->getBody();
-        while (!$body->eof()) {
-            fwrite($handle, $body->read(1024));
-        }
-
-        fclose($handle);
 
         return $retval;
     }
@@ -279,10 +225,10 @@ class CloudDrive
 
                     return [
                         'success' => true,
-                        'data' => [
-                            'message' => "File with same MD5 exists at $path: " . json_encode($file),
+                        'data'    => [
+                            'message'    => "File with same MD5 exists at $path: " . json_encode($file),
                             'path_match' => false,
-                            'md5_match' => true,
+                            'md5_match'  => true,
                         ],
                     ];
                 }
@@ -290,21 +236,21 @@ class CloudDrive
 
             return [
                 'success' => false,
-                'data' => [
-                    'message' => "File $remotePath does not exist.",
+                'data'    => [
+                    'message'    => "File $remotePath does not exist.",
                     'path_match' => false,
-                    'md5_match' => false,
+                    'md5_match'  => false,
                 ]
             ];
         }
 
         $retval = [
             'success' => true,
-            'data' => [
-                'message' => "File $remotePath exists.",
+            'data'    => [
+                'message'    => "File $remotePath exists.",
                 'path_match' => true,
-                'md5_match' => false,
-                'node' => $file,
+                'md5_match'  => false,
+                'node'       => $file,
             ],
         ];
 
@@ -319,44 +265,6 @@ class CloudDrive
             } else {
                 $retval['data']['message'] = "File $remotePath exists but no checksum is available.";
             }
-        }
-
-        return $retval;
-    }
-
-    /**
-     * Overwrite remote node with the file located at the given local path.
-     *
-     * @param string           $localPath  Local path of file to overwrite remote node
-     *                                     node with
-     * @param \CloudDrive\Node $remoteNode Remote node to overwrite
-     *
-     * @return array
-     */
-    public function overwriteFile($localPath, Node $remoteNode)
-    {
-        $retval = [
-            'success' => false,
-            'data' => [],
-        ];
-
-        $response = $this->httpClient->put("{$this->account->getContentUrl()}nodes/{$remoteNode['id']}/content", [
-            'headers' => [
-                'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
-            ],
-            'multipart' => [
-                [
-                    'name' => 'content',
-                    'contents' => fopen($localPath, 'r'),
-                ],
-            ],
-            'exceptions' => false,
-        ]);
-
-        $retval['data'] = json_decode((string)$response->getBody(), true);
-
-        if ($response->getStatusCode() === 200) {
-            $retval['success'] = true;
         }
 
         return $retval;
@@ -448,8 +356,8 @@ class CloudDrive
     public function uploadFile($localPath, $remotePath, $overwrite = false)
     {
         $retval = [
-            'success' => false,
-            'data' => [],
+            'success'       => false,
+            'data'          => [],
             'response_code' => null,
         ];
 
@@ -480,31 +388,36 @@ class CloudDrive
                 return $retval;
             }
 
-            return $this->overwriteFile($localPath, $response['data']['node']);
+            return $response['data']['node']->overwrite($localPath);
         }
 
-        $response = $this->httpClient->post("{$this->account->getContentUrl()}nodes", [
-            'headers' => [
-                'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
-            ],
-            'multipart' => [
-                [
-                    'name' => 'metadata',
-                    'contents' => json_encode([
-                        'kind' => 'FILE',
-                        'name' => $info['basename'],
-                        'parents' => [
-                            $remoteFolder['id'],
-                        ]
-                    ]),
+        $response = $this->httpClient->post(
+            "{$this->account->getContentUrl()}nodes",
+            [
+                'headers'    => [
+                    'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
                 ],
-                [
-                    'name' => 'contents',
-                    'contents' => fopen($localPath, 'r'),
+                'multipart'  => [
+                    [
+                        'name'     => 'metadata',
+                        'contents' => json_encode(
+                            [
+                                'kind'    => 'FILE',
+                                'name'    => $info['basename'],
+                                'parents' => [
+                                    $remoteFolder['id'],
+                                ]
+                            ]
+                        ),
+                    ],
+                    [
+                        'name'     => 'contents',
+                        'contents' => fopen($localPath, 'r'),
+                    ],
                 ],
-            ],
-            'exceptions' => false,
-        ]);
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
