@@ -18,7 +18,9 @@ class SyncCommand extends BaseCommand
     protected function main()
     {
         $this->init();
-        $this->clouddrive->getAccount()->authorize();
+
+        $this->output->writeln("Syncing...");
         $this->clouddrive->getAccount()->sync();
+        $this->output->writeln("Done.");
     }
 }
