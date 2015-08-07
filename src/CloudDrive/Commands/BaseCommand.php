@@ -11,6 +11,7 @@ use Cilex\Command\Command;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use CloudDrive\Node;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Utility\ParameterBag;
@@ -83,6 +84,10 @@ abstract class BaseCommand extends Command
 
         $this->input = $input;
         $this->output = $output;
+
+        // Set up basic styling
+        $this->output->getFormatter()->setStyle('folder', new OutputFormatterStyle('blue'));
+
         $this->main();
     }
 
@@ -121,6 +126,7 @@ abstract class BaseCommand extends Command
     {
         foreach ($nodes as $node) {
             $modified = new \DateTime($node['modifiedDate']);
+            $name = $node['kind'] === 'FOLDER' ? "<folder>{$node['name']}</folder>" : $node['name'];
             $this->output->writeln(
                 sprintf(
                     "%s  %s  %s %s %s %s",
@@ -129,7 +135,7 @@ abstract class BaseCommand extends Command
                     str_pad($node['status'], 10),
                     str_pad($node['kind'], 7),
                     str_pad($this->convertFilesize($node['contentProperties']['size']), 9),
-                    $node['name']
+                    $name
                 )
             );
         }
