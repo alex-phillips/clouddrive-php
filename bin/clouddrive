@@ -30,5 +30,7 @@ $app->command(new \CloudDrive\Commands\ListTrashCommand());
 $app->command(new \CloudDrive\Commands\ResolveCommand());
 $app->command(new \CloudDrive\Commands\MoveCommand());
 $app->command(new \CloudDrive\Commands\FindCommand());
+$app->command(new \CloudDrive\Commands\QuotaCommand());
+$app->command(new \CloudDrive\Commands\UsageCommand());
 
 $app->run();
