@@ -14,15 +14,24 @@ class ListTrashCommand extends BaseCommand
     protected function configure()
     {
         $this->setName('trash')
-            ->setDescription('List the nodes that are in trash');
+            ->setDescription('List the nodes that are in trash')
+            ->addOption('time', 't', null, 'Order output by date modified');
     }
 
     protected function main()
     {
         $this->init();
 
-        $this->listNodes(Node::filter([
-            ['status' => 'TRASH'],
-        ]));
+        $sort = BaseCommand::SORT_BY_NAME;
+        if ($this->input->getOption('time')) {
+            $sort = BaseCommand::SORT_BY_TIME;
+        }
+
+        $this->listNodes(
+            Node::filter([
+                ['status' => 'TRASH'],
+            ]),
+            $sort
+        );
     }
 }

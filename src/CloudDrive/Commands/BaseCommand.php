@@ -53,6 +53,9 @@ abstract class BaseCommand extends CilexCommand
      */
     protected $output;
 
+    const SORT_BY_NAME = 0;
+    const SORT_BY_TIME = 1;
+
     protected function convertFilesize($bytes, $decimals = 2)
     {
         $bytes = $bytes ?: 0;
@@ -119,12 +122,20 @@ abstract class BaseCommand extends CilexCommand
 
     abstract protected function main();
 
-    protected function listNodes(array $nodes, $orderByTime = false)
+    protected function listNodes(array $nodes, $sortBy = self::SORT_BY_NAME)
     {
-        usort($nodes, function ($a, $b) {
-            return strcasecmp($a['name'], $b['name']);
-//            return strtotime($a['modifiedDate']) < strtotime($b['modifiedDate']);
-        });
+        switch ($sortBy) {
+            case self::SORT_BY_NAME:
+                usort($nodes, function ($a, $b) {
+                    return strcasecmp($a['name'], $b['name']);
+                });
+                break;
+            case self::SORT_BY_TIME:
+                usort($nodes, function ($a, $b) {
+                    return strtotime($a['modifiedDate']) < strtotime($b['modifiedDate']);
+                });
+                break;
+        }
 
         foreach ($nodes as $node) {
             $modified = new \DateTime($node['modifiedDate']);
