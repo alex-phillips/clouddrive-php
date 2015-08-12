@@ -7,7 +7,7 @@
 
 namespace CloudDrive\Commands;
 
-use Cilex\Command\Command;
+use Cilex\Command\Command as CilexCommand;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use CloudDrive\Node;
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Utility\ParameterBag;
 
-abstract class BaseCommand extends Command
+abstract class BaseCommand extends CilexCommand
 {
     /**
      * @var \CloudDrive\Cache
@@ -49,7 +49,7 @@ abstract class BaseCommand extends Command
     protected $input;
 
     /**
-     * @var \Symfony\Component\Console\Output\OutputInterface
+     * @var \Symfony\Component\Console\Output\ConsoleOutput
      */
     protected $output;
 
@@ -63,10 +63,7 @@ abstract class BaseCommand extends Command
     }
 
     /**
-     * @param \Symfony\Component\Console\Input\InputInterface   $input
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
-     *
-     * @return void
+     * {@inheritdoc}
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -86,8 +83,9 @@ abstract class BaseCommand extends Command
         $this->output = $output;
 
         // Set up basic styling
-        $this->output->getFormatter()->setStyle('folder', new OutputFormatterStyle('blue'));
+        $this->output->getFormatter()->setStyle('blue', new OutputFormatterStyle('blue'));
 
+        $this->readConfig();
         $this->main();
     }
 
@@ -96,7 +94,6 @@ abstract class BaseCommand extends Command
      */
     protected function init()
     {
-        $this->readConfig();
         if (count($this->config) === 0) {
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
@@ -122,16 +119,27 @@ abstract class BaseCommand extends Command
 
     abstract protected function main();
 
-    protected function listNodes(array $nodes)
+    protected function listNodes(array $nodes, $orderByTime = false)
     {
+        usort($nodes, function ($a, $b) {
+            return strcasecmp($a['name'], $b['name']);
+//            return strtotime($a['modifiedDate']) < strtotime($b['modifiedDate']);
+        });
+
         foreach ($nodes as $node) {
             $modified = new \DateTime($node['modifiedDate']);
-            $name = $node['kind'] === 'FOLDER' ? "<folder>{$node['name']}</folder>" : $node['name'];
+            if ($modified->format('Y') === date('Y')) {
+                $date = $modified->format('M d H:m');
+            } else {
+                $date = $modified->format('M d  Y');
+            }
+
+            $name = $node['kind'] === 'FOLDER' ? "<blue>{$node['name']}</blue>" : $node['name'];
             $this->output->writeln(
                 sprintf(
                     "%s  %s  %s %s %s %s",
                     $node['id'],
-                    $modified->format("M d y H:m"),
+                    $date,
                     str_pad($node['status'], 10),
                     str_pad($node['kind'], 7),
                     str_pad($this->convertFilesize($node['contentProperties']['size']), 9),
@@ -158,6 +166,6 @@ abstract class BaseCommand extends Command
      */
     protected function saveConfig()
     {
-        file_put_contents("{$this->configPath}cli.json", json_encode($this->config));
+        file_put_contents("{$this->configPath}config.json", json_encode($this->config));
     }
 }
