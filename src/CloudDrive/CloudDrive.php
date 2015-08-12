@@ -273,15 +273,15 @@ class CloudDrive
     /**
      * Upload a local directory to Amazon Cloud Drive.
      *
-     * @param string     $localPath      Local path of directory to upload
-     * @param string     $remoteFolder   Remote folder to place the directory in
-     * @param bool|false $overwrite      Flag to overwrite files if they exist remotely
-     * @param bool|false $outputProgress `echo` out progress of each file
+     * @param string        $localPath    Local path of directory to upload
+     * @param string        $remoteFolder Remote folder to place the directory in
+     * @param bool          $overwrite    Flag to overwrite files if they exist remotely
+     * @param resource|null $outputStream Resource stream to output progress of each file
      *
      * @return array
      * @throws \Exception
      */
-    public function uploadDirectory($localPath, $remoteFolder, $overwrite = false, $outputProgress = false)
+    public function uploadDirectory($localPath, $remoteFolder, $overwrite = false, $outputStream = null)
     {
         $localPath = realpath($localPath);
 
@@ -329,11 +329,11 @@ class CloudDrive
                 break;
             }
 
-            if ($outputProgress === true) {
+            if (!is_null($outputStream)) {
                 if ($response['success'] === true) {
-                    echo "Successfully uploaded file $file: " . json_encode($response['data']) . "\n";
+                    fwrite($outputStream, "Successfully uploaded file $file: " . json_encode($response['data']) . "\n");
                 } else {
-                    echo "Failed to upload file $file: " . json_encode($response) . "\n";
+                    fwrite($outputStream, "Failed to upload file $file: " . json_encode($response) . "\n");
                 }
             }
 
@@ -420,6 +420,7 @@ class CloudDrive
         );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
+        $retval['response_code'] = $response->getStatusCode();
 
         if (($retval['response_code'] = $response->getStatusCode()) === 201) {
             $retval['success'] = true;
