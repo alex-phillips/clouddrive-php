@@ -210,7 +210,7 @@ class Account
         ];
 
         $response = $this->httpClient->get('https://cdws.us-east-1.amazonaws.com/drive/v1/account/endpoint', [
-            'headers' => [
+            'headers'    => [
                 'Authorization' => "Bearer {$this->token["access_token"]}",
             ],
             'exceptions' => false,
@@ -443,9 +443,12 @@ class Account
     public function sync()
     {
         $params = [
-            'includePurged' => "true",
-            'maxNodes' => 1000,
+            'maxNodes' => 5000,
         ];
+
+        if ($this->checkpoint) {
+            $params['includePurged'] = "true";
+        }
 
         while (true) {
             if ($this->checkpoint) {
@@ -455,10 +458,10 @@ class Account
             $loop = true;
 
             $response = $this->httpClient->post("{$this->getMetadataUrl()}changes", [
-                'headers' => [
+                'headers'    => [
                     'Authorization' => "Bearer {$this->token['access_token']}",
                 ],
-                'body' => json_encode($params),
+                'body'       => json_encode($params),
                 'exceptions' => false,
             ]);
 
