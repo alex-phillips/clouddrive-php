@@ -33,5 +33,6 @@ $app->command(new \CloudDrive\Commands\FindCommand());
 $app->command(new \CloudDrive\Commands\QuotaCommand());
 $app->command(new \CloudDrive\Commands\UsageCommand());
 $app->command(new \CloudDrive\Commands\ConfigCommand());
+$app->command(new \CloudDrive\Commands\CatCommand());
 
 $app->run();
