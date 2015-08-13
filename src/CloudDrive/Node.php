@@ -66,25 +66,17 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
      * Download contents of `Node` to local save path. If only the
      * local directory is given, the file will be saved as its remote name.
      *
-     * @param null $savePath
+     * @param resource $resource
      *
      * @return array
      * @throws \Exception
      */
-    public function download($savePath = null)
+    public function download($resource)
     {
         $retval = [
             'success' => false,
             'data' => []
         ];
-
-        if (is_null($savePath)) {
-            $savePath = getcwd();
-        }
-
-        if (file_exists($savePath) && is_dir($savePath)) {
-            $savePath = rtrim($savePath, '/') . "/{$this['name']}";
-        }
 
         $response = self::$httpClient->get(self::$account->getContentUrl() . "nodes/{$this['id']}/content", [
             'headers' => [
@@ -102,18 +94,10 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         $retval['success'] = true;
 
-        $handle = @fopen($savePath, 'a');
-
-        if (!$handle) {
-            throw new \Exception("Unable to open file at '$savePath'. Make sure the directory exists.");
-        }
-
         $body = $response->getBody();
         while (!$body->eof()) {
-            fwrite($handle, $body->read(1024));
+            fwrite($resource, $body->read(1024));
         }
-
-        fclose($handle);
 
         return $retval;
     }
