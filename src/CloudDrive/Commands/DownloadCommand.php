@@ -26,7 +26,7 @@ class DownloadCommand extends BaseCommand
         $this->init();
 
         $remotePath = $this->input->getArgument('remote_path');
-        $localPath = $this->input->getArgument('local_path') ?: '.';
+        $savePath = $this->input->getArgument('local_path') ?: getcwd();
 
         if ($this->input->getOption('id')) {
             if (!($node = Node::loadById($remotePath))) {
@@ -42,11 +42,23 @@ class DownloadCommand extends BaseCommand
             throw new \Exception("Folder downloads are not currently supported.");
         }
 
-        $result = $node->download($localPath);
-        if ($result['success']) {
-            $this->output->writeln("Successfully downloaded file to '$localPath'.");
-        } else {
-            $this->output->writeln("Failed to download node to '$localPath': " . json_encode($result['data']));
+        if (file_exists($savePath) && is_dir($savePath)) {
+            $savePath = rtrim($savePath, '/') . "/{$node['name']}";
         }
+
+        $handle = @fopen($savePath, 'a');
+
+        if (!$handle) {
+            throw new \Exception("Unable to open file at '$savePath'. Make sure the directory exists.");
+        }
+
+        $result = $node->download($handle);
+        if ($result['success']) {
+            $this->output->writeln("Successfully downloaded file to '$savePath'.");
+        } else {
+            $this->output->writeln("Failed to download node to '$savePath': " . json_encode($result['data']));
+        }
+
+        fclose($handle);
     }
 }
