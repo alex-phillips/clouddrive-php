@@ -9,18 +9,13 @@ namespace CloudDrive\Commands;
 
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
-use Symfony\Component\Console\Input\InputArgument;
 
 class InitCommand extends BaseCommand
 {
     protected function configure()
     {
         $this->setName('init')
-            ->setDescription('Initialize the command line application for use with an Amazon account')
-            ->addOption('email', 'e', InputArgument::OPTIONAL, 'The Amazon account email')
-            ->addOption('client-id', 'i', InputArgument::OPTIONAL, 'The CloudDrive API client ID')
-            ->addOption('client-secret', 's', InputArgument::OPTIONAL, 'The CloudDrive API client secret')
-            ->addOption('auth-url', 'a', InputArgument::OPTIONAL, 'The redirect URL used during initial authorization');
+            ->setDescription('Initialize the command line application for use with an Amazon account');
     }
 
     protected function main()
@@ -32,16 +27,6 @@ class InitCommand extends BaseCommand
         $this->readConfig();
 
         if (!$this->config['email']) {
-            $this->config['email'] = $this->input->getOption('email');
-        }
-        if (!$this->config['client-id']) {
-            $this->config['client-id'] = $this->input->getOption('client-id');
-        }
-        if (!$this->config['client-secret']) {
-            $this->config['client-secret'] = $this->input->getOption('client-secret');
-        }
-
-        if (!$this->config['email']) {
             throw new \Exception('Email is required for initialization.');
         }
 
@@ -51,7 +36,7 @@ class InitCommand extends BaseCommand
 
         $this->saveConfig();
 
-        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
+        $this->cacheStore = $this->generateCacheStore();
         $this->clouddrive = new CloudDrive(
             $this->config['email'],
             $this->config['client-id'],

@@ -8,7 +8,6 @@
 namespace CloudDrive\Commands;
 
 use Cilex\Command\Command as CilexCommand;
-use CloudDrive\Cache\MySQL;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use CloudDrive\Node;
@@ -117,6 +116,11 @@ abstract class BaseCommand extends CilexCommand
         $this->main();
     }
 
+    protected function generateCacheStore()
+    {
+        return new SQLite($this->config['email'], $this->configPath);
+    }
+
     /**
      * @throws \Exception
      */
@@ -126,8 +130,7 @@ abstract class BaseCommand extends CilexCommand
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
 
-//        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
-        $this->cacheStore = new MySQL('localhost', 'clouddrive', 'root', '');
+        $this->cacheStore = $this->generateCacheStore();
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
             $clouddrive = new CloudDrive(
@@ -145,8 +148,6 @@ abstract class BaseCommand extends CilexCommand
             }
         }
     }
-
-    abstract protected function main();
 
     protected function listNodes(array $nodes, $sortBy = self::SORT_BY_NAME)
     {
@@ -185,6 +186,8 @@ abstract class BaseCommand extends CilexCommand
             );
         }
     }
+
+    abstract protected function main();
 
     /**
      *
