@@ -5,15 +5,23 @@
  */
 date_default_timezone_set('America/New_York');
 
-if (file_exists(dirname(__FILE__) . '/../vendor/autoload.php')) {
-    require_once(dirname(__FILE__) . '/../vendor/autoload.php');
-} else if (file_exists(dirname(__FILE__) . '/../../../autoload.php')) {
-    require_once(dirname(__FILE__) . '/../../../autoload.php');
-} else {
+$autoloaded = false;
+foreach ([
+    dirname(__FILE__) . '/../vendor/autoload.php',
+    dirname(__FILE__) . '/../../../autoload.php',
+] as $file) {
+    if (file_exists($file)) {
+        require_once($file);
+        $autoloaded = true;
+        break;
+    }
+}
+
+if (!$autoloaded) {
     throw new Exception('Unable to find composer autoload.php file.');
 }
 
-$app = new \Cilex\Application('CloudDrive', '0.1.0');
+$app = new \Cilex\Application('Cloud Drive', '0.1.0');
 
 $app->command(new \CloudDrive\Commands\MetadataCommand());
 $app->command(new \CloudDrive\Commands\InitCommand());
@@ -34,5 +42,7 @@ $app->command(new \CloudDrive\Commands\QuotaCommand());
 $app->command(new \CloudDrive\Commands\UsageCommand());
 $app->command(new \CloudDrive\Commands\ConfigCommand());
 $app->command(new \CloudDrive\Commands\CatCommand());
+$app->command(new \CloudDrive\Commands\TreeCommand());
+$app->command(new \CloudDrive\Commands\DiskUsageCommand());
 
 $app->run();
