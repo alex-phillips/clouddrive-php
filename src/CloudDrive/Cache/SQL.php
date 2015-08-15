@@ -25,7 +25,14 @@ abstract class SQL implements Cache
      */
     public function deleteAllNodes()
     {
-        return ORM::for_table('nodes')->delete_many();
+        try {
+            ORM::get_db()->beginTransaction();
+            ORM::for_table('nodes')->delete_many();
+            ORM::get_db()->exec('TRUNCATE nodes_nodes');
+            ORM::get_db()->commit();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**
@@ -35,7 +42,20 @@ abstract class SQL implements Cache
     {
         $node = ORM::for_table('nodes')->find_one($id);
         if ($node) {
-            return $node->delete();
+            try {
+                ORM::get_db()->beginTransaction();
+
+                $node->delete();
+                ORM::for_table('nodes_nodes')
+                    ->where('id_node', $id)
+                    ->delete_many();
+
+                return ORM::get_db()->commit();
+            } catch (\Exception $e) {
+                ORM::get_db()->rollBack();
+            }
+
+            return false;
         }
 
         return true;
@@ -116,7 +136,8 @@ abstract class SQL implements Cache
     {
         $results = ORM::for_table('nodes')
             ->select('raw_data')
-            ->where_like('parents', "%{$node['id']}")
+            ->join('nodes_nodes', ['nodes.id', '=', 'nodes_nodes.id_node'])
+            ->where('nodes_nodes.id_parent', $node['id'])
             ->find_many();
 
         foreach ($results as &$result) {
@@ -195,7 +216,42 @@ abstract class SQL implements Cache
             'raw_data' => json_encode($node),
         ]);
 
-        return $n->save();
+        try {
+            ORM::get_db()->beginTransaction();
+
+            $n->save();
+
+            $parentIds = $node['parents'];
+            $previousParents = ORM::for_table('nodes_nodes')
+                ->where('id_node', $node['id'])
+                ->find_array();
+
+            foreach ($previousParents as $parent) {
+                if ($index = array_search($parent['id_parent'], $parentIds)) {
+                    unset($parentIds[$index]);
+                    continue;
+                } else {
+                    ORM::for_table('nodes_nodes')
+                        ->find_one($parent['id'])
+                        ->delete();
+                }
+            }
+
+            foreach ($parentIds as $parentId) {
+                $p = ORM::for_table('nodes_nodes')->create();
+                $p->set([
+                    'id_node' => $node['id'],
+                    'id_parent' => $parentId,
+                ]);
+                $p->save();
+            }
+
+            return ORM::get_db()->commit();
+        } catch (\Exception $e) {
+            ORM::get_db()->rollBack();
+
+            return false;
+        }
     }
 
     /**

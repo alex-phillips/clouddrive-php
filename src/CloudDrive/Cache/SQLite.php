@@ -58,6 +58,15 @@ class SQLite extends SQL
                     checkpoint VARCHAR
                 );'
             );
+            $db->exec(
+                'CREATE TABLE nodes_nodes
+                (
+                    id INTEGER PRIMARY KEY,
+                    id_node VARCHAR NOT NULL,
+                    id_parent VARCHAR NOT NULL,
+                    UNIQUE (id_node, id_parent)
+                );'
+            );
         }
 
         ORM::configure("sqlite:$cacheDir/$email.db");
