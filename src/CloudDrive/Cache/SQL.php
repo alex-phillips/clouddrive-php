@@ -196,7 +196,7 @@ abstract class SQL implements Cache
     public function saveNode(Node $node)
     {
         if (!$node['name'] && $node['isRoot'] === true) {
-            $node['name'] = 'ROOT';
+            $node['name'] = 'Cloud Drive';
         }
 
         $n = ORM::for_table('nodes')->find_one($node['id']);

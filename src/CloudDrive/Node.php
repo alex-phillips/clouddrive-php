@@ -332,9 +332,9 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
      */
     public static function loadRoot()
     {
-        $results = self::$cacheStore->findNodesByName('ROOT');
+        $results = self::$cacheStore->findNodesByName('Cloud Drive');
         if (empty($results)) {
-            throw new \Exception("No node by name 'ROOT' found in the database.");
+            throw new \Exception("No node by name 'Cloud Drive' found in the database.");
         }
 
         foreach ($results as $result) {
