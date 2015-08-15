@@ -7,7 +7,6 @@
 
 namespace CloudDrive\Commands;
 
-use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 
 class InitCommand extends BaseCommand
