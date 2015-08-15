@@ -40,6 +40,7 @@ class TreeCommand extends BaseCommand
             }
         }
 
+        $this->output->writeln($node['name']);
         if ($this->input->getOption('markdown')) {
             $this->output->write($this->buildMarkdownTree($node->getChildren(), $includeAssets));
         } else {
