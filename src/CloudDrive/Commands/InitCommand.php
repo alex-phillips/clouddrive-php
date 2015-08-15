@@ -9,7 +9,7 @@ namespace CloudDrive\Commands;
 
 use CloudDrive\CloudDrive;
 
-class InitCommand extends BaseCommand
+class InitCommand extends Command
 {
     protected function configure()
     {

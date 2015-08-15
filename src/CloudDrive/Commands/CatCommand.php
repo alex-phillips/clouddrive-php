@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class CatCommand extends BaseCommand
+class CatCommand extends Command
 {
     protected function configure()
     {

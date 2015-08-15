@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class DownloadCommand extends BaseCommand
+class DownloadCommand extends Command
 {
     protected function configure()
     {

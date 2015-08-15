@@ -9,7 +9,7 @@ namespace CloudDrive\Commands;
 
 use Symfony\Component\Console\Input\InputArgument;
 
-class UploadCommand extends BaseCommand
+class UploadCommand extends Command
 {
     protected function configure()
     {

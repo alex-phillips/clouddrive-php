@@ -9,7 +9,7 @@ namespace CloudDrive\Commands;
 
 use CloudDrive\Node;
 
-class FindCommand extends BaseCommand
+class FindCommand extends Command
 {
     protected function configure()
     {
@@ -31,9 +31,9 @@ class FindCommand extends BaseCommand
             $nodes = Node::searchNodesByName($query);
         }
 
-        $sort = BaseCommand::SORT_BY_NAME;
+        $sort = Command::SORT_BY_NAME;
         if ($this->input->getOption('time')) {
-            $sort = BaseCommand::SORT_BY_TIME;
+            $sort = Command::SORT_BY_TIME;
         }
 
         $this->listNodes($nodes, $sort);

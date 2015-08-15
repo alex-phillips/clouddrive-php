@@ -9,7 +9,7 @@ namespace CloudDrive\Commands;
 
 use CloudDrive\Node;
 
-class ResolveCommand extends BaseCommand
+class ResolveCommand extends Command
 {
     protected function configure()
     {

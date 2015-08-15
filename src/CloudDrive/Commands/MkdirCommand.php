@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class MkdirCommand extends BaseCommand
+class MkdirCommand extends Command
 {
     protected function configure()
     {

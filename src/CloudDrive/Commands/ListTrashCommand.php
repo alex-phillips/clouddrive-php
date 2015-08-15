@@ -9,7 +9,7 @@ namespace CloudDrive\Commands;
 
 use CloudDrive\Node;
 
-class ListTrashCommand extends BaseCommand
+class ListTrashCommand extends Command
 {
     protected function configure()
     {
@@ -22,9 +22,9 @@ class ListTrashCommand extends BaseCommand
     {
         $this->init();
 
-        $sort = BaseCommand::SORT_BY_NAME;
+        $sort = Command::SORT_BY_NAME;
         if ($this->input->getOption('time')) {
-            $sort = BaseCommand::SORT_BY_TIME;
+            $sort = Command::SORT_BY_TIME;
         }
 
         $this->listNodes(

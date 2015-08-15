@@ -7,7 +7,7 @@
 
 namespace CloudDrive\Commands;
 
-class SyncCommand extends BaseCommand
+class SyncCommand extends Command
 {
     protected function configure()
     {

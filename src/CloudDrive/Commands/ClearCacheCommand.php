@@ -7,7 +7,7 @@
 
 namespace CloudDrive\Commands;
 
-class ClearCacheCommand extends BaseCommand
+class ClearCacheCommand extends Command
 {
     protected function configure()
     {

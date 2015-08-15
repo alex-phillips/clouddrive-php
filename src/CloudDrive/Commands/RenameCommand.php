@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class RenameCommand extends BaseCommand
+class RenameCommand extends Command
 {
     protected function configure()
     {

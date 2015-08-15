@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class DiskUsageCommand extends BaseCommand
+class DiskUsageCommand extends Command
 {
     protected function configure()
     {

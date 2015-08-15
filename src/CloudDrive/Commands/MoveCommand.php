@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class MoveCommand extends BaseCommand
+class MoveCommand extends Command
 {
     protected function configure()
     {

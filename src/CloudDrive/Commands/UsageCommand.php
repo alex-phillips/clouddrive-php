@@ -7,7 +7,7 @@
 
 namespace CloudDrive\Commands;
 
-class UsageCommand extends BaseCommand
+class UsageCommand extends Command
 {
     protected function configure()
     {

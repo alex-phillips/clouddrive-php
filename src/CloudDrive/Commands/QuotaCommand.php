@@ -7,7 +7,7 @@
 
 namespace CloudDrive\Commands;
 
-class QuotaCommand extends BaseCommand
+class QuotaCommand extends Command
 {
     protected function configure()
     {

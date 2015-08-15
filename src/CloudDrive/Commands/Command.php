@@ -16,7 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Utility\ParameterBag;
 
-abstract class BaseCommand extends CilexCommand
+abstract class Command extends CilexCommand
 {
     /**
      * @var \CloudDrive\Cache

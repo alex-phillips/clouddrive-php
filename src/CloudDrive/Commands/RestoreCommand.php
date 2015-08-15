@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class RestoreCommand extends BaseCommand
+class RestoreCommand extends Command
 {
     protected function configure()
     {

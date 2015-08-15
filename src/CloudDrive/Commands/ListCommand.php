@@ -10,7 +10,7 @@ namespace CloudDrive\Commands;
 use CloudDrive\Node;
 use Symfony\Component\Console\Input\InputArgument;
 
-class ListCommand extends BaseCommand
+class ListCommand extends Command
 {
     protected function configure()
     {
@@ -28,9 +28,9 @@ class ListCommand extends BaseCommand
 
         $remotePath = $this->input->getArgument('remote_path') ?: '';
 
-        $sort = BaseCommand::SORT_BY_NAME;
+        $sort = Command::SORT_BY_NAME;
         if ($this->input->getOption('time')) {
-            $sort = BaseCommand::SORT_BY_TIME;
+            $sort = Command::SORT_BY_TIME;
         }
 
         if ($this->input->getOption('id')) {
