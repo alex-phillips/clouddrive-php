@@ -127,13 +127,10 @@ class Account
     {
         $retval = [
             'success' => true,
-            'data' => [],
+            'data'    => [],
         ];
 
-        $config = $this->cache->loadAccountConfig($this->email);
-        if (!$config) {
-            $config = [];
-        }
+        $config = $this->cache->loadAccountConfig($this->email) ?: [];
 
         $this->token = new ParameterBag($config);
 
@@ -145,7 +142,7 @@ class Account
                     'success' => false,
                     'data'    => [
                         'message'  => 'Initial authorization required.',
-                        'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope=$scope&response_type=code&redirect_uri=http://localhost",
+                        'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope={$scope}&response_type=code&redirect_uri=http://localhost",
                     ],
                 ];
 
@@ -159,13 +156,15 @@ class Account
             }
 
             $this->token->merge($response["data"]);
-        } else if (time() - $this->token["last_authorized"] > $this->token["expires_in"]) {
-            $response = $this->renewAuthorization();
-            if (!$response["success"]) {
-                return $response;
-            }
+        } else {
+            if (time() - $this->token["last_authorized"] > $this->token["expires_in"]) {
+                $response = $this->renewAuthorization();
+                if (!$response["success"]) {
+                    return $response;
+                }
 
-            $this->token->merge($response['data']);
+                $this->token->merge($response['data']);
+            }
         }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
@@ -206,7 +205,7 @@ class Account
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
         $response = $this->httpClient->get('https://cdws.us-east-1.amazonaws.com/drive/v1/account/endpoint', [
@@ -274,11 +273,11 @@ class Account
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
         $response = $this->httpClient->get("{$this->getMetadataUrl()}account/quota", [
-            'headers' => [
+            'headers'    => [
                 'Authorization' => "Bearer {$this->token["access_token"]}",
             ],
             'exceptions' => false,
@@ -312,15 +311,18 @@ class Account
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
-        $response = $this->httpClient->get("{$this->getMetadataUrl()}account/usage", [
-            'headers' => [
-                'Authorization' => "Bearer {$this->token["access_token"]}",
-            ],
-            'exceptions' => false,
-        ]);
+        $response = $this->httpClient->get(
+            "{$this->getMetadataUrl()}account/usage",
+            [
+                'headers'    => [
+                    'Authorization' => "Bearer {$this->token["access_token"]}",
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -340,19 +342,22 @@ class Account
     {
         $retval = [
             "success" => false,
-            "data" => [],
+            "data"    => [],
         ];
 
-        $response = $this->httpClient->post('https://api.amazon.com/auth/o2/token', [
-            'form_params' => [
-                'grant_type'    => "refresh_token",
-                'refresh_token' => $this->token["refresh_token"],
-                'client_id'     => $this->clientId,
-                'client_secret' => $this->clientSecret,
-                'redirect_uri'  => "http://localhost",
-            ],
-            'exceptions'  => false,
-        ]);
+        $response = $this->httpClient->post(
+            'https://api.amazon.com/auth/o2/token',
+            [
+                'form_params' => [
+                    'grant_type'    => "refresh_token",
+                    'refresh_token' => $this->token["refresh_token"],
+                    'client_id'     => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'redirect_uri'  => "http://localhost",
+                ],
+                'exceptions'  => false,
+            ]
+        );
 
         $retval["data"] = json_decode((string)$response->getBody(), true);
 
@@ -376,7 +381,7 @@ class Account
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
         $url = parse_url($authUrl);
@@ -388,16 +393,19 @@ class Account
             return $retval;
         }
 
-        $response = $this->httpClient->post('https://api.amazon.com/auth/o2/token', [
-            'form_params' => [
-                'grant_type'    => 'authorization_code',
-                'code'          => $params['code'],
-                'client_id'     => $this->clientId,
-                'client_secret' => $this->clientSecret,
-                'redirect_uri'  => 'http://localhost',
-            ],
-            'exceptions' => false,
-        ]);
+        $response = $this->httpClient->post(
+            'https://api.amazon.com/auth/o2/token',
+            [
+                'form_params' => [
+                    'grant_type'    => 'authorization_code',
+                    'code'          => $params['code'],
+                    'client_id'     => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'redirect_uri'  => 'http://localhost',
+                ],
+                'exceptions'  => false,
+            ]
+        );
 
         $retval["data"] = json_decode((string)$response->getBody(), true);
 
@@ -457,13 +465,16 @@ class Account
 
             $loop = true;
 
-            $response = $this->httpClient->post("{$this->getMetadataUrl()}changes", [
-                'headers'    => [
-                    'Authorization' => "Bearer {$this->token['access_token']}",
-                ],
-                'body'       => json_encode($params),
-                'exceptions' => false,
-            ]);
+            $response = $this->httpClient->post(
+                "{$this->getMetadataUrl()}changes",
+                [
+                    'headers'    => [
+                        'Authorization' => "Bearer {$this->token['access_token']}",
+                    ],
+                    'body'       => json_encode($params),
+                    'exceptions' => false,
+                ]
+            );
 
             if ($response->getStatusCode() !== 200) {
                 throw new \Exception((string)$response->getBody());
@@ -493,9 +504,9 @@ class Account
                         foreach ($part['nodes'] as $node) {
                             $node = new Node($node);
                             if ($node['status'] === 'PURGED') {
-                                $this->cache->deleteNodeById($node['id']);
+                                $node->delete();
                             } else {
-                                $this->cache->saveNode($node);
+                                $node->save();
                             }
                         }
                     }
