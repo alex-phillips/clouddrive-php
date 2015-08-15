@@ -8,6 +8,7 @@
 namespace CloudDrive\Commands;
 
 use Cilex\Command\Command as CilexCommand;
+use CloudDrive\Cache\MySQL;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use CloudDrive\Node;
@@ -42,6 +43,30 @@ abstract class BaseCommand extends CilexCommand
      * @var string
      */
     protected $configPath;
+
+    /**
+     * Default and accepted values for the CLI config
+     *
+     * @var array
+     */
+    protected $configValues = [
+        'email'         => [
+            'type'    => 'string',
+            'default' => '',
+        ],
+        'client-id'     => [
+            'type'    => 'string',
+            'default' => '',
+        ],
+        'client-secret' => [
+            'type'    => 'string',
+            'default' => '',
+        ],
+        'json.pretty'   => [
+            'type'    => 'bool',
+            'default' => false,
+        ],
+    ];
 
     /**
      * @var \Symfony\Component\Console\Input\InputInterface
@@ -101,7 +126,8 @@ abstract class BaseCommand extends CilexCommand
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
         }
 
-        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
+//        $this->cacheStore = new SQLite($this->config['email'], $this->configPath);
+        $this->cacheStore = new MySQL('localhost', 'clouddrive', 'root', '');
 
         if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
             $clouddrive = new CloudDrive(
@@ -165,10 +191,39 @@ abstract class BaseCommand extends CilexCommand
      */
     protected function readConfig()
     {
-        if (file_exists($this->configFile) && $data = json_decode(file_get_contents($this->configFile), true)) {
-            $this->config = new ParameterBag($data);
-        } else {
-            $this->config = new ParameterBag();
+        $this->config = new ParameterBag();
+        if (!file_exists($this->configFile) || !($data = json_decode(file_get_contents($this->configFile), true))) {
+            $data = [];
+        }
+
+        $this->setConfig($data);
+    }
+
+    protected function removeConfigValue($key)
+    {
+        $this->config[$key] = $this->configValues[$key]['default'];
+    }
+
+    protected function setConfig(array $data)
+    {
+        $data = (new ParameterBag($data))->flatten();
+        foreach ($data as $key => $value) {
+            $this->setConfigValue($key, $value);
+        }
+    }
+
+    protected function setConfigValue($key, $value = null)
+    {
+        if (array_key_exists($key, $this->configValues)) {
+            switch ($this->configValues[$key]['type']) {
+                case 'bool':
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                    break;
+            }
+
+            settype($value, $this->configValues[$key]['type']);
+
+            $this->config[$key] = $value;
         }
     }
 

@@ -12,8 +12,7 @@ class UsageCommand extends BaseCommand
     protected function configure()
     {
         $this->setName('usage')
-            ->setDescription('Show Cloud Drive usage')
-            ->addOption('pretty', 'p', null, 'Output the metadata in easy-to-read JSON');
+            ->setDescription('Show Cloud Drive usage');
     }
 
     protected function main()
@@ -22,7 +21,7 @@ class UsageCommand extends BaseCommand
 
         $result = $this->clouddrive->getAccount()->getUsage();
         if ($result['success']) {
-            if ($this->input->getOption('pretty')) {
+            if ($this->config['json.pretty']) {
                 $this->output->writeln(json_encode($result['data'], JSON_PRETTY_PRINT));
             } else {
                 $this->output->writeln(json_encode($result['data']));

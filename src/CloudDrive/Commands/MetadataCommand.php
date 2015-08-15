@@ -17,14 +17,12 @@ class MetadataCommand extends BaseCommand
         $this->setName('metadata')
             ->setDescription('Retrieve the metadata (JSON) of a node by its path')
             ->addArgument('path', InputArgument::OPTIONAL, 'The remote path of the node')
-            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path')
-            ->addOption('pretty', 'p', null, 'Output the metadata in easy-to-read JSON');
+            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
     }
 
     protected function main()
     {
         $this->init();
-        $this->clouddrive->getAccount()->authorize();
 
         $path = $this->input->getArgument('path') ?: '';
 
@@ -38,7 +36,7 @@ class MetadataCommand extends BaseCommand
             }
         }
 
-        if ($this->input->getOption('pretty')) {
+        if ($this->config['json.pretty']) {
             $this->output->writeln(json_encode($node, JSON_PRETTY_PRINT));
         } else {
             $this->output->writeln(json_encode($node));
