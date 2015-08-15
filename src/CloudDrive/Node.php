@@ -26,21 +26,29 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Cloud Drive `Account` object
+     *
      * @var \CloudDrive\Account
      */
     protected static $account;
 
     /**
+     * Local `Cache` storage object
+     *
      * @var \CloudDrive\Cache
      */
     protected static $cacheStore;
 
     /**
+     * HTTP client
+     *
      * @var \GuzzleHttp\Client
      */
     protected static $httpClient;
 
     /**
+     * Flag set if the `Node` class has already been initialized
+     *
      * @var bool
      */
     protected static $initialized = false;
@@ -63,6 +71,16 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Delete a `Node` and its parent associations.
+     *
+     * @return bool
+     */
+    public function delete()
+    {
+        return self::$cacheStore->deleteNodeById($this['id']);
+    }
+
+    /**
      * Download contents of `Node` to local save path. If only the
      * local directory is given, the file will be saved as its remote name.
      *
@@ -75,16 +93,19 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     {
         $retval = [
             'success' => false,
-            'data' => []
+            'data'    => []
         ];
 
-        $response = self::$httpClient->get(self::$account->getContentUrl() . "nodes/{$this['id']}/content", [
-            'headers' => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'stream' => true,
-            'exceptions' => false,
-        ]);
+        $response = self::$httpClient->get(
+            self::$account->getContentUrl() . "nodes/{$this['id']}/content",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'stream'     => true,
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -345,19 +366,22 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
-        $response = self::$httpClient->post(self::$account->getMetadataUrl() . "nodes/{$newFolder['id']}/children", [
-            'headers' => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'json' => [
-                'fromParent' => $this['parents'][0],
-                'childId' => $this['id'],
-            ],
-            'exceptions' => false,
-        ]);
+        $response = self::$httpClient->post(
+            self::$account->getMetadataUrl() . "nodes/{$newFolder['id']}/children",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'json'       => [
+                    'fromParent' => $this['parents'][0],
+                    'childId'    => $this['id'],
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -382,21 +406,24 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
-        $response = self::$httpClient->put(self::$account->getContentUrl() . "nodes/{$this['id']}/content", [
-            'headers'    => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'multipart'  => [
-                [
-                    'name'     => 'content',
-                    'contents' => fopen($localPath, 'r'),
+        $response = self::$httpClient->put(
+            self::$account->getContentUrl() . "nodes/{$this['id']}/content",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
                 ],
-            ],
-            'exceptions' => false,
-        ]);
+                'multipart'  => [
+                    [
+                        'name'     => 'content',
+                        'contents' => fopen($localPath, 'r'),
+                    ],
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -418,18 +445,21 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     {
         $retval = [
             'success' => false,
-            'data' => [],
+            'data'    => [],
         ];
 
-        $response = self::$httpClient->patch(self::$account->getMetadataUrl() . "nodes/{$this['id']}", [
-            'headers' => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'json' => [
-                'name' => $name,
-            ],
-            'exceptions' => false,
-        ]);
+        $response = self::$httpClient->patch(
+            self::$account->getMetadataUrl() . "nodes/{$this['id']}",
+            [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'json' => [
+                    'name' => $name,
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -460,12 +490,15 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
             return $retval;
         }
 
-        $response = self::$httpClient->post(self::$account->getMetadataUrl() . "trash/{$this['id']}/restore", [
-            'headers'    => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'exceptions' => false,
-        ]);
+        $response = self::$httpClient->post(
+            self::$account->getMetadataUrl() . "trash/{$this['id']}/restore",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
@@ -518,12 +551,15 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
             return $retval;
         }
 
-        $response = self::$httpClient->put(self::$account->getMetadataUrl() . "trash/{$this['id']}", [
-            'headers'    => [
-                'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
-            ],
-            'exceptions' => false,
-        ]);
+        $response = self::$httpClient->put(
+            self::$account->getMetadataUrl() . "trash/{$this['id']}",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'exceptions' => false,
+            ]
+        );
 
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
