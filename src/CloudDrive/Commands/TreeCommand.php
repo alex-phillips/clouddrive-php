@@ -56,7 +56,7 @@ class TreeCommand extends Command
         static $first;
         if (is_null($first)) {
             $first = false;
-            $output[] = $node['name'];
+            $this->output->writeln($node['name']);
         }
 
         $children = $node->getChildren();
@@ -83,21 +83,23 @@ class TreeCommand extends Command
             }
 
             if ($next->isFolder()) {
-                $output[] = $itemPrefix . '<blue>' . (string)$next['name'] . '</blue>';
+                $this->output->writeln(
+                    $itemPrefix . '<blue>' . (string)$next['name'] . '</blue>'
+                );
             } else {
-                $output[] = $itemPrefix . (string)$next['name'];
+                $this->output->writeln(
+                    $itemPrefix . (string)$next['name']
+                );
             }
 
             if ($next->isFolder() || $includeAssets === true) {
-                $output[] = $this->buildAsciiTree(
+                $this->buildAsciiTree(
                     $next,
                     $includeAssets,
                     $prefix . ($i == $count - 1 ? '  ' : '| ')
                 );
             }
         }
-
-        return implode("\n", $output);
     }
 
     protected function buildMarkdownTree($node, $includeAssets = false, $prefix = '')
@@ -107,15 +109,16 @@ class TreeCommand extends Command
         static $first;
         if (is_null($first)) {
             $first = false;
-            $output[] = $node['name'];
+            $this->output->writeln($node['name']);
         }
 
         foreach ($node->getChildren() as $node) {
             $output[] = "$prefix- {$node['name']}";
             if ($node->isFolder()) {
-                $output[] = $this->buildMarkdownTree($node, $includeAssets, "$prefix  ");
+                $this->output->writeln(
+                    $this->buildMarkdownTree($node, $includeAssets, "$prefix  ")
+                );
             }
         }
-        return implode("\n", $output);
     }
 }
