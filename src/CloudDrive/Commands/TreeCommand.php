@@ -56,7 +56,12 @@ class TreeCommand extends Command
         static $first;
         if (is_null($first)) {
             $first = false;
-            $this->output->writeln($node['name']);
+
+            if ($node->isFolder()) {
+                $this->output->writeln("<blue>{$node['name']}</blue>");
+            } else {
+                $this->output->writeln($node['name']);
+            }
         }
 
         $children = $node->getChildren();
@@ -109,7 +114,12 @@ class TreeCommand extends Command
         static $first;
         if (is_null($first)) {
             $first = false;
-            $this->output->writeln($node['name']);
+
+            if ($node->isFolder()) {
+                $this->output->writeln("<blue>{$node['name']}</blue>");
+            } else {
+                $this->output->writeln($node['name']);
+            }
         }
 
         foreach ($node->getChildren() as $node) {
