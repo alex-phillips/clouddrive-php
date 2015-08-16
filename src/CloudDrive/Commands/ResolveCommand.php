@@ -11,6 +11,8 @@ use CloudDrive\Node;
 
 class ResolveCommand extends Command
 {
+    protected $onlineCommand = false;
+
     protected function configure()
     {
         $this->setName('resolve')

@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputArgument;
 
 class MetadataCommand extends Command
 {
+    protected $onlineCommand = false;
+
     protected function configure()
     {
         $this->setName('metadata')

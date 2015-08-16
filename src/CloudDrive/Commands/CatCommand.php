@@ -22,7 +22,7 @@ class CatCommand extends Command
 
     protected function main()
     {
-        $this->init();
+        $this->initOnlineCommand();
 
         $remotePath = $this->input->getArgument('remote_path');
 

@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputArgument;
 
 class TreeCommand extends Command
 {
+    protected $onlineCommand = false;
+
     protected function configure()
     {
         $this->setName('tree')
@@ -40,18 +42,24 @@ class TreeCommand extends Command
             }
         }
 
-        $this->output->writeln($node['name']);
         if ($this->input->getOption('markdown')) {
-            $this->output->write($this->buildMarkdownTree($node->getChildren(), $includeAssets));
+            $this->output->write($this->buildMarkdownTree($node, $includeAssets));
         } else {
-            $this->output->write($this->buildAsciiTree($node->getChildren(), $includeAssets));
+            $this->output->write($this->buildAsciiTree($node, $includeAssets));
         }
     }
 
-    protected function buildAsciiTree($children, $includeAssets = false, $prefix = '')
+    protected function buildAsciiTree($node, $includeAssets = false, $prefix = '')
     {
         $output = [];
 
+        static $first;
+        if (is_null($first)) {
+            $first = false;
+            $output[] = $node['name'];
+        }
+
+        $children = $node->getChildren();
         for ($i = 0, $count = count($children); $i < $count; ++$i) {
             $itemPrefix = $prefix;
             $next = $children[$i];
@@ -81,26 +89,31 @@ class TreeCommand extends Command
             }
 
             if ($next->isFolder() || $includeAssets === true) {
-                if ($nextChildren = $next->getChildren()) {
-                    $output[] = $this->buildAsciiTree(
-                        $nextChildren,
-                        $includeAssets,
-                        $prefix . ($i == $count - 1 ? '  ' : '| ')
-                    );
-                }
+                $output[] = $this->buildAsciiTree(
+                    $next,
+                    $includeAssets,
+                    $prefix . ($i == $count - 1 ? '  ' : '| ')
+                );
             }
         }
 
         return implode("\n", $output);
     }
 
-    protected function buildMarkdownTree($children, $includeAssets = false, $prefix = '')
+    protected function buildMarkdownTree($node, $includeAssets = false, $prefix = '')
     {
         $output = [];
-        foreach ($children as $node) {
+
+        static $first;
+        if (is_null($first)) {
+            $first = false;
+            $output[] = $node['name'];
+        }
+
+        foreach ($node->getChildren() as $node) {
             $output[] = "$prefix- {$node['name']}";
             if ($node->isFolder()) {
-                $output[] = $this->buildMarkdownTree($node->getChildren(), $includeAssets, "$prefix  ");
+                $output[] = $this->buildMarkdownTree($node, $includeAssets, "$prefix  ");
             }
         }
         return implode("\n", $output);

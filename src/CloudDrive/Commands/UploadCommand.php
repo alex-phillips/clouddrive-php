@@ -23,7 +23,6 @@ class UploadCommand extends Command
     protected function main()
     {
         $this->init();
-        $this->clouddrive->getAccount()->authorize();
 
         $overwrite = $this->input->getOption('overwrite') ?: false;
 

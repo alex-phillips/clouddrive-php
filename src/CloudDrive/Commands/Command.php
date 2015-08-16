@@ -73,6 +73,11 @@ abstract class Command extends CilexCommand
     protected $input;
 
     /**
+     * @var bool
+     */
+    protected $onlineCommand = true;
+
+    /**
      * @var \Symfony\Component\Console\Output\ConsoleOutput
      */
     protected $output;
@@ -121,10 +126,16 @@ abstract class Command extends CilexCommand
         return new SQLite($this->config['email'], $this->configPath);
     }
 
-    /**
-     * @throws \Exception
-     */
     protected function init()
+    {
+        if ($this->onlineCommand === true) {
+            $this->initOnlineCommand();
+        } else {
+            $this->initOfflineCommand();
+        }
+    }
+
+    protected function initOfflineCommand()
     {
         if (count($this->config) === 0) {
             throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
@@ -140,7 +151,37 @@ abstract class Command extends CilexCommand
                 $this->cacheStore
             );
 
+            $this->clouddrive = $clouddrive;
+            Node::init($this->clouddrive->getAccount(), $this->cacheStore);
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function initOnlineCommand()
+    {
+        if (count($this->config) === 0) {
+            throw new \Exception('Account has not been authorized. Please do so using the `init` command.');
+        }
+
+        $this->cacheStore = $this->generateCacheStore();
+
+        if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
+            $clouddrive = new CloudDrive(
+                $this->config['email'],
+                $this->config['client-id'],
+                $this->config['client-secret'],
+                $this->cacheStore
+            );
+
+            if ($this->output->getVerbosity() === 2) {
+                $this->output->writeln("Authorizing...", OutputInterface::VERBOSITY_VERBOSE);
+            }
             if ($clouddrive->getAccount()->authorize()['success']) {
+                if ($this->output->getVerbosity() === 2) {
+                    $this->output->writeln("Done.");
+                }
                 $this->clouddrive = $clouddrive;
                 Node::init($this->clouddrive->getAccount(), $this->cacheStore);
             } else {
