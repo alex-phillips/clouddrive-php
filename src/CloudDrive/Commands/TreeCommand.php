@@ -123,11 +123,9 @@ class TreeCommand extends Command
         }
 
         foreach ($node->getChildren() as $node) {
-            $output[] = "$prefix- {$node['name']}";
-            if ($node->isFolder()) {
-                $this->output->writeln(
-                    $this->buildMarkdownTree($node, $includeAssets, "$prefix  ")
-                );
+            $this->output->writeln("$prefix- {$node['name']}");
+            if ($node->isFolder() || $includeAssets === true) {
+                $this->buildMarkdownTree($node, $includeAssets, "$prefix  ");
             }
         }
     }
