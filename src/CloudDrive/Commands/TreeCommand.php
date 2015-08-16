@@ -51,8 +51,6 @@ class TreeCommand extends Command
 
     protected function buildAsciiTree($node, $includeAssets = false, $prefix = '')
     {
-        $output = [];
-
         static $first;
         if (is_null($first)) {
             $first = false;
@@ -109,8 +107,6 @@ class TreeCommand extends Command
 
     protected function buildMarkdownTree($node, $includeAssets = false, $prefix = '')
     {
-        $output = [];
-
         static $first;
         if (is_null($first)) {
             $first = false;
