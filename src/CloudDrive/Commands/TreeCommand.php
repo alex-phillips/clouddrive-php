@@ -43,9 +43,9 @@ class TreeCommand extends Command
         }
 
         if ($this->input->getOption('markdown')) {
-            $this->output->write($this->buildMarkdownTree($node, $includeAssets));
+            $this->buildMarkdownTree($node, $includeAssets);
         } else {
-            $this->output->write($this->buildAsciiTree($node, $includeAssets));
+            $this->buildAsciiTree($node, $includeAssets);
         }
     }
 
