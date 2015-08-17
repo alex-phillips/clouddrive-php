@@ -44,5 +44,6 @@ $app->command(new \CloudDrive\Commands\ConfigCommand());
 $app->command(new \CloudDrive\Commands\CatCommand());
 $app->command(new \CloudDrive\Commands\TreeCommand());
 $app->command(new \CloudDrive\Commands\DiskUsageCommand());
+$app->command(new \CloudDrive\Commands\RenewCommand());
 
 $app->run();
