@@ -221,7 +221,7 @@ abstract class Command extends CilexCommand
                     $date,
                     str_pad($node['status'], 10),
                     str_pad($node['kind'], 7),
-                    str_pad($this->convertFilesize($node['contentProperties']['size']), 9),
+                    str_pad($this->convertFilesize($node['contentProperties']['size'], 0), 9),
                     $name
                 )
             );
