@@ -1,6 +1,6 @@
 <?php
 /**
- * @author Alex Phillips <aphillips@cbcnewmedia.com>
+ * @author Alex Phillips <ahp118@gmail.com>
  * Date: 8/14/15
  * Time: 2:35 PM
  */
@@ -49,7 +49,7 @@ class TreeCommand extends Command
         }
     }
 
-    protected function buildAsciiTree($node, $includeAssets = false, $prefix = '')
+    protected function buildAsciiTree(Node $node, $includeAssets = false, $prefix = '')
     {
         static $first;
         if (is_null($first)) {
@@ -105,7 +105,7 @@ class TreeCommand extends Command
         }
     }
 
-    protected function buildMarkdownTree($node, $includeAssets = false, $prefix = '')
+    protected function buildMarkdownTree(Node $node, $includeAssets = false, $prefix = '')
     {
         static $first;
         if (is_null($first)) {
