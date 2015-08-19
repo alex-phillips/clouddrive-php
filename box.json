@@ -1,0 +1,22 @@
+{
+  "chmod": "0755",
+  "directories": [
+    "src"
+  ],
+  "files": [
+    "LICENSE.md"
+  ],
+  "finder": [
+    {
+      "name": "*.php",
+      "exclude": [
+        "Tests"
+      ],
+      "in": "vendor"
+    }
+  ],
+  "git-version": "0.1.0",
+  "main": "bin/clouddrive",
+  "output": "clouddrive.phar",
+  "stub": true
+}
