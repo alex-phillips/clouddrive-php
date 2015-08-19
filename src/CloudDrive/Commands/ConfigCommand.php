@@ -49,7 +49,12 @@ class ConfigCommand extends Command
                     $this->removeConfigValue($option);
                     $this->saveConfig();
                 } else {
-                    $this->output->writeln($this->config[$option]);
+                    $value = $this->config[$option];
+                    if ($this->configValues[$option]['type'] === 'bool') {
+                        $value = $value ? 'true' : 'false';
+                    }
+
+                    $this->output->writeln($value);
                 }
             }
         }
