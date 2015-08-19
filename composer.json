@@ -2,6 +2,7 @@
     "name": "alex-phillips/clouddrive",
     "description": "PHP SDK and CLI for Amazon's CloudDrive",
     "require": {
+        "php": ">=5.5",
         "guzzlehttp/guzzle": "^6.0",
         "alex-phillips/utilities": "~0.1",
         "cilex/cilex": "^1.1",
