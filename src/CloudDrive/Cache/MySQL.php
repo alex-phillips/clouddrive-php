@@ -30,6 +30,7 @@ class MySQL extends SQL
                 checkpoint TEXT,
                 PRIMARY KEY (id)
             );
+            ALTER TABLE `configs` ADD INDEX `email` (`email`);
         ');
         ORM::get_db()->exec('
             CREATE TABLE IF NOT EXISTS nodes (
@@ -38,12 +39,14 @@ class MySQL extends SQL
                 kind VARCHAR(16),
                 md5 VARCHAR(128),
                 status VARCHAR(16),
-                parents VARCHAR(128),
                 created DATETIME,
                 modified DATETIME,
                 raw_data LONGTEXT,
                 PRIMARY KEY (id)
             );
+            ALTER TABLE `nodes` ADD INDEX `id` (`id`);
+            ALTER TABLE `nodes` ADD INDEX `name` (`name`);
+            ALTER TABLE `nodes` ADD INDEX `md5` (`md5`);
         ');
         ORM::get_db()->exec('
             CREATE TABLE IF NOT EXISTS nodes_nodes (

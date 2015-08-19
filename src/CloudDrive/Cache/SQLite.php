@@ -37,11 +37,13 @@ class SQLite extends SQL
                     kind VARCHAR NOT NULL,
                     md5 VARCHAR,
                     status VARCHAR,
-                    parents VARCHAR,
                     created DATETIME NOT NULL,
                     modified DATETIME NOT NULL,
                     raw_data TEXT NOT NULL
-                );'
+                );
+                CREATE INDEX node_id on nodes(id);
+                CREATE INDEX node_name on nodes(name);
+                CREATE INDEX node_md5 on nodes(md5);'
             );
             $db->exec(
                 'CREATE TABLE configs
@@ -56,7 +58,8 @@ class SQLite extends SQL
                     content_url VARCHAR,
                     metadata_url VARCHAR,
                     checkpoint VARCHAR
-                );'
+                );
+                CREATE INDEX config_email on configs(email);'
             );
             $db->exec(
                 'CREATE TABLE nodes_nodes
