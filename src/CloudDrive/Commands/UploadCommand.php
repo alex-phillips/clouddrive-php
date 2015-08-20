@@ -30,13 +30,26 @@ class UploadCommand extends Command
         $remote = $this->input->getArgument('remote_path') ?: '';
 
         if (is_dir($source)) {
-            $this->clouddrive->uploadDirectory($source, $remote, $overwrite, $this->output->getStream());
+            $this->clouddrive->uploadDirectory($source, $remote, $overwrite, array($this, 'outputResult'));
         } else {
             $response = $this->clouddrive->uploadFile($source, $remote, $overwrite);
-            if ($response['success']) {
-                $this->output->writeln("Successfully uploaded file $source: " . json_encode($response['data']));
-            } else {
-                $this->output->writeln("Failed to upload file $source: " . json_encode($response['data']));
+            $this->outputResult($response, [
+                'name' => $source,
+            ]);
+        }
+    }
+
+    public function outputResult($response, $info = null)
+    {
+        if ($response['success']) {
+            $this->output->writeln("<info>Successfully uploaded file '{$info['name']}'</info>");
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($response['data']));
+            }
+        } else {
+            $this->output->writeln("<error>Failed to upload file '{$info['name']}'</error>");
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($response['data']));
             }
         }
     }

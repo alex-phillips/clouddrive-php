@@ -38,12 +38,18 @@ class MoveCommand extends Command
         $result = $node->move($newParent);
         if ($result['success']) {
             $this->output->writeln(
-                "Successfully moved node '{$node['name']}' to $newPath: " . json_encode($result['data'])
+                "Successfully moved node '{$node['name']}' to '$newPath'"
             );
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($result['data']));
+            }
         } else {
             $this->output->writeln(
-                "Failed to move node '{$node['name']}' to $newPath: " . json_encode($result['data'])
+                "Failed to move node '{$node['name']}' to '$newPath'"
             );
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($result['data']));
+            }
         }
     }
 }

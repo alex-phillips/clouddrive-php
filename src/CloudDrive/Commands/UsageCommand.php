@@ -1,6 +1,6 @@
 <?php
 /**
- * @author Alex Phillips <aphillips@cbcnewmedia.com>
+ * @author Alex Phillips <ahp118@gmail.com>
  * Date: 8/9/15
  * Time: 8:04 PM
  */
@@ -27,7 +27,10 @@ class UsageCommand extends Command
                 $this->output->writeln(json_encode($result['data']));
             }
         } else {
-            $this->output->writeln("Failed to retrieve accoutn quota: " . json_encode($result['data']));
+            $this->output->writeln("<error>Failed to retrieve account quota</error>");
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($result['data']));
+            }
         }
     }
 }
