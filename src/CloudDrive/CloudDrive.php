@@ -276,12 +276,12 @@ class CloudDrive
      * @param string        $localPath    Local path of directory to upload
      * @param string        $remoteFolder Remote folder to place the directory in
      * @param bool          $overwrite    Flag to overwrite files if they exist remotely
-     * @param resource|null $outputStream Resource stream to output progress of each file
+     * @param callable|null $callback     Callable to perform after each file upload
      *
      * @return array
      * @throws \Exception
      */
-    public function uploadDirectory($localPath, $remoteFolder, $overwrite = false, $outputStream = null)
+    public function uploadDirectory($localPath, $remoteFolder, $overwrite = false, $callback = null)
     {
         $localPath = realpath($localPath);
 
@@ -329,12 +329,14 @@ class CloudDrive
                 break;
             }
 
-            if (!is_null($outputStream)) {
-                if ($response['success'] === true) {
-                    fwrite($outputStream, "Successfully uploaded file $file: " . json_encode($response['data']) . "\n");
-                } else {
-                    fwrite($outputStream, "Failed to upload file $file: " . json_encode($response) . "\n");
-                }
+            if (is_callable($callback)) {
+                call_user_func($callback, $response, [
+                    'file'          => $file,
+                    'local_path'    => $localPath,
+                    'name'          => $name,
+                    'remote_folder' => $remoteFolder,
+                    'remote_path'   => $remotePath,
+                ]);
             }
 
             $retval[] = $response;
