@@ -68,7 +68,9 @@ class SQLite extends SQL
                     id_node VARCHAR NOT NULL,
                     id_parent VARCHAR NOT NULL,
                     UNIQUE (id_node, id_parent)
-                );'
+                );
+                CREATE INDEX nodes_id_node on nodes_nodes(id_node);
+                CREATE INDEX nodes_id_parent on nodes_nodes(id_parent);'
             );
         }
 
