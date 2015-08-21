@@ -23,7 +23,8 @@ class RenewCommand extends Command
         if ($result['success']) {
             $this->output->writeln("<info>Successfully renewed authorization.</info>");
         } else {
-            $this->output->writeln("<error>Failed to renew authorization.</error>");
+            $this->output->getErrorOutput()
+                ->writeln("<error>Failed to renew authorization.</error>");
         }
     }
 }

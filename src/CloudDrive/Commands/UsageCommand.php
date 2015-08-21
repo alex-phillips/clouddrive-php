@@ -27,9 +27,11 @@ class UsageCommand extends Command
                 $this->output->writeln(json_encode($result['data']));
             }
         } else {
-            $this->output->writeln("<error>Failed to retrieve account quota</error>");
+            $this->output->getErrorOutput()
+                ->writeln("<error>Failed to retrieve account quota</error>");
             if ($this->output->isVerbose()) {
-                $this->output->writeln(json_encode($result['data']));
+                $this->output->getErrorOutput()
+                    ->writeln(json_encode($result['data']));
             }
         }
     }

@@ -32,7 +32,7 @@ class UploadCommand extends Command
         if (is_dir($source)) {
             $this->clouddrive->uploadDirectory($source, $remote, $overwrite, array($this, 'outputResult'));
         } else {
-            $response = $this->clouddrive->uploadFile($source, $remote, $overwrite);
+            $response = $this->clouddrive->uploadFile($source, $remote, $overwrite, $this->config['upload.duplicates']);
             $this->outputResult($response, [
                 'name' => $source,
             ]);
@@ -44,12 +44,13 @@ class UploadCommand extends Command
         if ($response['success']) {
             $this->output->writeln("<info>Successfully uploaded file '{$info['name']}'</info>");
             if ($this->output->isVerbose()) {
-                $this->output->writeln(json_encode($response['data']));
+                $this->output->writeln(json_encode($response));
             }
         } else {
-            $this->output->writeln("<error>Failed to upload file '{$info['name']}'</error>");
+            $this->output->getErrorOutput()
+                ->writeln("<error>Failed to upload file '{$info['name']}': {$response['data']['message']}</error>");
             if ($this->output->isVerbose()) {
-                $this->output->writeln(json_encode($response['data']));
+                $this->output->getErrorOutput()->writeln(json_encode($response));
             }
         }
     }
