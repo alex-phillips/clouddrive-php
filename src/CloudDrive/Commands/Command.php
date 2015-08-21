@@ -49,19 +49,23 @@ abstract class Command extends CilexCommand
      * @var array
      */
     protected $configValues = [
-        'email'         => [
+        'email'             => [
             'type'    => 'string',
             'default' => '',
         ],
-        'client-id'     => [
+        'client-id'         => [
             'type'    => 'string',
             'default' => '',
         ],
-        'client-secret' => [
+        'client-secret'     => [
             'type'    => 'string',
             'default' => '',
         ],
-        'json.pretty'   => [
+        'json.pretty'       => [
+            'type'    => 'bool',
+            'default' => false,
+        ],
+        'upload.duplicates' => [
             'type'    => 'bool',
             'default' => false,
         ],
