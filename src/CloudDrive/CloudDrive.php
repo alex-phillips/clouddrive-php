@@ -220,15 +220,19 @@ class CloudDrive
     {
         if (is_null($file = Node::loadByPath($remotePath))) {
             if (!is_null($localPath)) {
-                if (!is_null($file = Node::loadByMd5(md5_file($localPath)))) {
-                    $path = $file->getPath();
+                if (!empty($nodes = Node::loadByMd5(md5_file($localPath)))) {
+                    $ids = [];
+                    foreach ($nodes as $node) {
+                        $ids[] = $node['id'];
+                    }
 
                     return [
                         'success' => true,
                         'data'    => [
-                            'message'    => "File with same MD5 exists at $path: " . json_encode($file),
+                            'message'    => "File(s) with same MD5: " . implode(', ', $ids),
                             'path_match' => false,
                             'md5_match'  => true,
+                            'nodes'      => $nodes,
                         ],
                     ];
                 }
@@ -348,14 +352,15 @@ class CloudDrive
     /**
      * Upload a single file to Amazon Cloud Drive.
      *
-     * @param string     $localPath  The local path to the file to upload
-     * @param string     $remotePath The remote folder to upload the file to
-     * @param bool|false $overwrite  Whether to overwrite the file if it already
-     *                               exists remotely
+     * @param string     $localPath     The local path to the file to upload
+     * @param string     $remotePath    The remote folder to upload the file to
+     * @param bool|false $overwrite     Whether to overwrite the file if it already
+     *                                  exists remotely
+     * @param bool       $suppressDedup Disables checking for duplicates when uploading
      *
      * @return array
      */
-    public function uploadFile($localPath, $remotePath, $overwrite = false)
+    public function uploadFile($localPath, $remotePath, $overwrite = false, $suppressDedup = false)
     {
         $retval = [
             'success'       => false,
@@ -375,26 +380,37 @@ class CloudDrive
 
         $response = $this->nodeExists("$remotePath/{$info['basename']}", $localPath);
         if ($response['success'] === true) {
-            if ($overwrite === false) {
+            $pathMatch = $response['data']['path_match'];
+            $md5Match = $response['data']['md5_match'];
+
+            if ($pathMatch === true && $md5Match === true) {
+                // Skip if path and MD5 match
                 $retval['data'] = $response['data'];
 
                 return $retval;
-            }
-
-            if ($response['data']['md5_match'] === true) {
-                if ($remotePath === '') {
-                    $remotePath = '/';
+            } else if ($pathMatch === true && $md5Match === false) {
+                // If path is the same and checksum differs, only overwrite
+                if ($overwrite === true) {
+                    return $response['data']['node']->overwrite($localPath);
                 }
-                $retval['data']['message'] = "Identical file exists at $remotePath";
+
+                $retval['data'] = $response['data'];
 
                 return $retval;
-            }
+            } else if ($pathMatch === false && $md5Match === true) {
+                // If path differs and checksum is the same, check for dedup
+                if ($suppressDedup === false) {
+                    $retval['data'] = $response['data'];
 
-            return $response['data']['node']->overwrite($localPath);
+                    return $retval;
+                }
+            }
         }
 
+        $suppressDedup = $suppressDedup ? '?suppress=deduplication' : '';
+
         $response = $this->httpClient->post(
-            "{$this->account->getContentUrl()}nodes",
+            "{$this->account->getContentUrl()}nodes{$suppressDedup}",
             [
                 'headers'    => [
                     'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
