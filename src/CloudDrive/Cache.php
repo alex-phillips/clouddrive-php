@@ -49,13 +49,13 @@ interface Cache
     public function findNodeById($id);
 
     /**
-     * Find the node by the given MD5 in the cache.
+     * Find all nodes by the given MD5 in the cache.
      *
      * @param string $md5
      *
-     * @return \CloudDrive\Node|null
+     * @return array
      */
-    public function findNodeByMd5($md5);
+    public function findNodesByMd5($md5);
 
     /**
      * Retrieve all node matching the given name in the cache.

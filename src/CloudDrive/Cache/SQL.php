@@ -98,16 +98,20 @@ abstract class SQL implements Cache
     /**
      * {@inheritdoc}
      */
-    public function findNodeByMd5($md5)
+    public function findNodesByMd5($md5)
     {
-        $node = ORM::for_table('nodes')->select('raw_data')->where('md5', $md5)->find_one();
-        if (!$node) {
-            return null;
+        $nodes = ORM::for_table('nodes')
+            ->select('raw_data')
+            ->where('md5', $md5)
+            ->find_many();
+
+        foreach ($nodes as &$node) {
+            $node = new Node(
+                json_decode($node->as_array()['raw_data'], true)
+            );
         }
 
-        return new Node(
-            json_decode($node->as_array()['raw_data'], true)
-        );
+        return $nodes;
     }
 
     /**
