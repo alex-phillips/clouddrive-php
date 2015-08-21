@@ -20,7 +20,8 @@ class ListCommand extends Command
             ->setDescription('List all remote nodes inside of a specified directory')
             ->addArgument('remote_path', InputArgument::OPTIONAL, 'The remote directory to list')
             ->addOption('time', 't', null, 'Order output by date modified')
-            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
+            ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path')
+            ->addOption('assets', 'a', null, "List node's assets if requesting a FILE node");
     }
 
     protected function main()
@@ -45,6 +46,10 @@ class ListCommand extends Command
             }
         }
 
-        $this->listNodes($node->getChildren(), $sort);
+        if ($node->isFolder() || $this->input->getOption('assets')) {
+            $this->listNodes($node->getChildren(), $sort);
+        } else {
+            $this->listNodes([$node], $sort);
+        }
     }
 }
