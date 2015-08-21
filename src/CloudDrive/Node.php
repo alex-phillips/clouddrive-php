@@ -136,15 +136,15 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
-     * Retrieve `Node` that matches the given MD5 checksum.
+     * Find all nodes that match the given MD5 checksum.
      *
      * @param string $md5
      *
-     * @return Node|null
+     * @return array
      */
-    public static function findNodeByMd5($md5)
+    public static function findNodesByMd5($md5)
     {
-        return self::$cacheStore->findNodeByMd5($md5);
+        return self::$cacheStore->findNodesByMd5($md5);
     }
 
     /**
@@ -167,6 +167,52 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     public function getChildren()
     {
         return self::$cacheStore->getNodeChildren($this);
+    }
+
+    /**
+     * Retrieve the node's metadata directly from the API.
+     *
+     * @param bool|false $tempLink
+     *
+     * @return array
+     */
+    public function getMetadata($tempLink = false)
+    {
+        $retval = [
+            'success' => false,
+            'data'    => [],
+        ];
+
+        $query = [];
+
+        if ($tempLink) {
+            $query['tempLink'] = true;
+        }
+
+        $response = self::$httpClient->get(
+            self::$account->getMetadataUrl() . "nodes/{$this['id']}",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'json'       => [
+                    'fromParent' => $this['parents'][0],
+                    'childId'    => $this['id'],
+                ],
+                'query' => [
+                    'tempLink' => $tempLink ? 'true' : 'false',
+                ],
+                'exceptions' => false,
+            ]
+        );
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+
+        if ($response->getStatusCode() === 200) {
+            $retval['success'] = true;
+        }
+
+        return $retval;
     }
 
     /**
@@ -253,18 +299,16 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
-     * Load a `Node` given an ID, MD5, or remote path.
+     * Load a `Node` given an ID or remote path.
      *
-     * @param string $param Parameter to find the `Node` by: ID, MD5, or path
+     * @param string $param Parameter to find the `Node` by: ID or path
      *
      * @return \CloudDrive\Node|null
      */
     public static function load($param)
     {
         if (!($node = self::loadById($param))) {
-            if (!($node = self::loadByMd5($param))) {
-                $node = self::loadByPath($param);
-            }
+            $node = self::loadByPath($param);
         }
 
         return $node;
@@ -287,11 +331,11 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
      *
      * @param string $md5 MD5 checksum of the node
      *
-     * @return \CloudDrive\Node|null
+     * @return array
      */
     public static function loadByMd5($md5)
     {
-        return self::$cacheStore->findNodeByMd5($md5);
+        return self::$cacheStore->findNodesByMd5($md5);
     }
 
     /**
