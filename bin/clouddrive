@@ -45,5 +45,6 @@ $app->command(new \CloudDrive\Commands\CatCommand());
 $app->command(new \CloudDrive\Commands\TreeCommand());
 $app->command(new \CloudDrive\Commands\DiskUsageCommand());
 $app->command(new \CloudDrive\Commands\RenewCommand());
+$app->command(new \CloudDrive\Commands\TempLinkCommand());
 
 $app->run();
