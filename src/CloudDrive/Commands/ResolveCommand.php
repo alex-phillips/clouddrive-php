@@ -8,6 +8,7 @@
 namespace CloudDrive\Commands;
 
 use CloudDrive\Node;
+use Symfony\Component\Console\Input\InputArgument;
 
 class ResolveCommand extends Command
 {
@@ -17,7 +18,7 @@ class ResolveCommand extends Command
     {
         $this->setName('resolve')
             ->setDescription("Return a node's remote path by its ID")
-            ->addArgument('id');
+            ->addArgument('id', InputArgument::REQUIRED, 'The ID of the node to resolve');
     }
 
     protected function main()
