@@ -69,6 +69,10 @@ abstract class Command extends CilexCommand
             'type'    => 'bool',
             'default' => false,
         ],
+        'display.trash'     => [
+            'type'    => 'bool',
+            'default' => false,
+        ],
     ];
 
     /**
@@ -210,6 +214,10 @@ abstract class Command extends CilexCommand
         }
 
         foreach ($nodes as $node) {
+            if ($node->inTrash() && !$this->config['display.trash']) {
+                continue;
+            }
+
             $modified = new \DateTime($node['modifiedDate']);
             if ($modified->format('Y') === date('Y')) {
                 $date = $modified->format('M d H:m');
