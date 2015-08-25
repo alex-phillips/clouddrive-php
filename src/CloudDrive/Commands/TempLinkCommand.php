@@ -36,9 +36,13 @@ class TempLinkCommand extends Command
             }
         }
 
+        if ($node->isFolder()) {
+            throw new \Exception("Links can only be created for files.");
+        }
+
         $response = $node->getMetadata(true);
         if ($response['success']) {
-            if ($response['data']['tempLink']) {
+            if (isset($response['data']['tempLink'])) {
                 $this->output->writeln($response['data']['tempLink']);
             } else {
                 $this->output->getErrorOutput()
