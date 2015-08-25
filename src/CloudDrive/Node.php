@@ -269,6 +269,16 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Return `true` if the node is in the trash.
+     *
+     * @return bool
+     */
+    public function inTrash()
+    {
+        return $this['status'] === 'TRASH';
+    }
+
+    /**
      * Returns whether the `Node` is an asset or not.
      *
      * @return bool
