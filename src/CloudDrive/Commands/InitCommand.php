@@ -30,7 +30,7 @@ class InitCommand extends Command
         }
 
         if (!$this->config['client-id'] || !$this->config['client-secret']) {
-            throw new \Exception('Amazon CloudDrive API credentials are required for initialization.');
+            throw new \Exception('Amazon Cloud Drive API credentials are required for initialization.');
         }
 
         $this->saveConfig();
@@ -54,16 +54,16 @@ class InitCommand extends Command
 
                 $response = $this->clouddrive->getAccount()->authorize($redirectUrl);
                 if ($response['success']) {
-                    $this->output->writeln('Successfully authenticated with Amazon CloudDrive.');
+                    $this->output->writeln('<info>Successfully authenticated with Amazon Cloud Drive.</info>');
                     return;
                 }
 
-                $this->output->writeln(
-                    'Failed to authenticate with Amazon Clouddrive: ' . json_encode($response['data'])
+                $this->output->getErrorOutput()->writeln(
+                    '<error>Failed to authenticate with Amazon Cloud Drive: ' . json_encode($response['data']) . '</error>'
                 );
             }
         } else {
-            $this->output->writeln('That user is already authenticated with Amazon CloudDrive.');
+            $this->output->writeln('<error>That user is already authenticated with Amazon Cloud Drive.</error>');
         }
     }
 }
