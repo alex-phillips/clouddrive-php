@@ -38,9 +38,16 @@ class TrashCommand extends Command
 
         $result = $node->trash();
         if ($result['success']) {
-            $this->output->writeln("Successfully trashed node at '$remotePath': " . json_encode($result['data']));
+            $this->output->writeln("<info>Successfully trashed node at '$remotePath'</info>");
+            if ($this->output->isVerbose()) {
+                $this->output->writeln(json_encode($result['data']));
+            }
         } else {
-            $this->output->writeln("Failed to trash node at '$remotePath': " . json_encode($result['data']));
+            $this->output->getErrorOutput()->writeln("<error>Failed to trash node at '$remotePath'</error>");
+            if ($this->output->isVerbose()) {
+                $this->output->getErrorOutput()
+                    ->writeln(json_encode($result['data']));
+            }
         }
     }
 }
