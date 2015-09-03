@@ -8,10 +8,10 @@
 namespace CloudDrive;
 
 use ArrayAccess;
+use Countable;
 use GuzzleHttp\Client;
 use IteratorAggregate;
 use JsonSerializable;
-use Countable;
 use Utility\Traits\Bag;
 
 /**
@@ -81,20 +81,66 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
-     * Download contents of `Node` to local save path. If only the
-     * local directory is given, the file will be saved as its remote name.
+     * Download contents of `Node` to local save path. If only the local
+     * directory is given, the file will be saved as its remote name.
      *
-     * @param resource $resource
+     * @param resource|string $dest
+     * @param callable        $callback
      *
      * @return array
      * @throws \Exception
      */
-    public function download($resource)
+    public function download($dest, $callback = null)
+    {
+        if ($this->isFolder()) {
+            return $this->downloadFolder($dest, $callback);
+        }
+
+        return $this->downloadFile($dest, $callback);
+    }
+
+    /**
+     * Save a FILE node to the specified local destination.
+     *
+     * @param resource|string $dest
+     * @param callable        $callback
+     *
+     * @return array
+     * @throws \Exception
+     */
+    protected function downloadFile($dest, $callback = null)
     {
         $retval = [
             'success' => false,
-            'data'    => []
+            'data'    => [],
         ];
+
+        if (is_resource($dest)) {
+            $handle = $dest;
+            $metadata = stream_get_meta_data($handle);
+            $dest = $metadata["uri"];
+        } else {
+            $dest = rtrim($dest, '/');
+
+            if (file_exists($dest)) {
+                if (is_dir($dest)) {
+                    $dest = rtrim($dest, '/') . "/{$this['name']}";
+                } else {
+                    $retval['data']['message'] = "File already exists at '$dest'.";
+                    if (is_callable($callback)) {
+                        call_user_func($callback, $retval, $dest);
+                    }
+
+                    return $retval;
+                }
+            }
+
+            $handle = @fopen($dest, 'a');
+
+            if (!$handle) {
+                throw new \Exception("Unable to open file at '$dest'. Make sure the directory path exists.");
+            }
+        }
 
         $response = self::$httpClient->get(
             self::$account->getContentUrl() . "nodes/{$this['id']}/content",
@@ -110,6 +156,10 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
         $retval['data'] = json_decode((string)$response->getBody(), true);
 
         if ($response->getStatusCode() !== 200) {
+            if (is_callable($callback)) {
+                call_user_func($callback, $retval, $dest);
+            }
+
             return $retval;
         }
 
@@ -117,8 +167,55 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         $body = $response->getBody();
         while (!$body->eof()) {
-            fwrite($resource, $body->read(1024));
+            fwrite($handle, $body->read(1024));
         }
+
+        fclose($handle);
+
+        if (is_callable($callback)) {
+            call_user_func($callback, $retval, $dest);
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Recursively download all children of a FOLDER node to the specified
+     * local destination.
+     *
+     * @param string   $dest
+     * @param callable $callback
+     *
+     * @return array
+     * @throws \Exception
+     */
+    protected function downloadFolder($dest, $callback = null)
+    {
+        $retval = [
+            'success' => false,
+            'data'    => [],
+        ];
+
+        if (!is_string($dest)) {
+            throw new \Exception("Must pass in local path to download directory to.");
+        }
+
+        $nodes = $this->getChildren();
+
+        $dest = rtrim($dest) . "/{$this['name']}";
+        if (!file_exists($dest)) {
+            mkdir($dest);
+        }
+
+        foreach ($nodes as $node) {
+            if ($node->isFile()) {
+                $node->download("{$dest}/{$node['name']}", $callback);
+            } else if ($node->isFolder()) {
+                $node->download($dest, $callback);
+            }
+        }
+
+        $retval['success'] = true;
 
         return $retval;
     }

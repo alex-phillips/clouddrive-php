@@ -15,7 +15,7 @@ class DownloadCommand extends Command
     protected function configure()
     {
         $this->setName('download')
-            ->setDescription('Download remote file to specified local path (currently only files are supported)')
+            ->setDescription('Download remote file or folder to specified local path')
             ->addArgument('remote_path', InputArgument::REQUIRED, 'The remote file path to download')
             ->addArgument('local_path', InputArgument::OPTIONAL, 'The path to save the file')
             ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
@@ -38,27 +38,16 @@ class DownloadCommand extends Command
             }
         }
 
-        if ($node->isFolder()) {
-            throw new \Exception("Folder downloads are not currently supported.");
-        }
-
-        if (file_exists($savePath) && is_dir($savePath)) {
-            $savePath = rtrim($savePath, '/') . "/{$node['name']}";
-        }
-
-        $handle = @fopen($savePath, 'a');
-
-        if (!$handle) {
-            throw new \Exception("Unable to open file at '$savePath'. Make sure the directory exists.");
-        }
-
-        $result = $node->download($handle);
-        if ($result['success']) {
-            $this->output->writeln("Successfully downloaded file to '$savePath'.");
-        } else {
-            $this->output->writeln("Failed to download node to '$savePath': " . json_encode($result['data']));
-        }
-
-        fclose($handle);
+        $node->download($savePath, function ($result, $dest) {
+            if ($result['success']) {
+                $this->output->writeln("<info>Successfully downloaded file to '$dest'</info>");
+            } else {
+                $this->output->getErrorOutput()
+                    ->writeln("<error>Failed to download node to '$dest'</error>");
+                if ($this->output->isVerbose()) {
+                    $this->output->getErrorOutput()->writeln(json_encode($result['data']));
+                }
+            }
+        });
     }
 }
