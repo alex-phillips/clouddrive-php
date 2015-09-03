@@ -69,16 +69,18 @@ Available commands:
   clear-cache Clear the local cache
   clearcache  Clear the local cache
   config      Read, write, and remove config options
-  download    Download remote file to specified local path (currently only files are supported)
+  download    Download remote file or folder to specified local path
   du          Display disk usage for the given node
   find        Find nodes by name or MD5 checksum
   help        Displays help for a command
   init        Initialize the command line application for use with an Amazon account
+  link        Generate a temporary, pre-authenticated download link
   list        Lists commands
   ls          List all remote nodes inside of a specified directory
   metadata    Retrieve the metadata (JSON) of a node by its path
   mkdir       Create a new remote directory given a path
   mv          Move a node to a new remote folder
+  pending     List the nodes that have a status of 'PENDING'
   quota       Show Cloud Drive quota
   rename      Rename remote node
   renew       Renew authorization
