@@ -16,6 +16,7 @@ All Notable changes to `clouddrive-php` will be documented in this file
 - Added `link` command to generate pre-authenticated temp links to share files
 - Added config value to suppress trashed nodes in `ls` output
 - Method in the `Node` class `inTrash` returns if the node's status is in the trash or not
+- Ability to now download FOLDER nodes
 
 ### Deprecated
 - Passing in a resource stream into the `upload` method has been replaced by a callable (see 'added')
