@@ -30,7 +30,7 @@ class UploadCommand extends Command
         $remote = $this->input->getArgument('remote_path') ?: '';
 
         if (is_dir($source)) {
-            $this->clouddrive->uploadDirectory($source, $remote, $overwrite, array($this, 'outputResult'));
+            $this->clouddrive->uploadDirectory($source, $remote, $overwrite, [$this, 'outputResult']);
         } else {
             $response = $this->clouddrive->uploadFile($source, $remote, $overwrite, $this->config['upload.duplicates']);
             $this->outputResult($response, [
