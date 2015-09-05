@@ -29,7 +29,7 @@ class FindCommand extends Command
 
         $query = $this->input->getArgument('query');
         if ($this->input->getOption('md5')) {
-            $nodes = Node::findNodesByMd5($query);
+            $nodes = Node::loadByMd5($query);
         } else {
             $nodes = Node::searchNodesByName($query);
         }
