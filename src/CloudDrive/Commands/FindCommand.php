@@ -8,6 +8,7 @@
 namespace CloudDrive\Commands;
 
 use CloudDrive\Node;
+use Symfony\Component\Console\Input\InputArgument;
 
 class FindCommand extends Command
 {
@@ -17,8 +18,8 @@ class FindCommand extends Command
     {
         $this->setName('find')
             ->setDescription('Find nodes by name or MD5 checksum')
-            ->addArgument('query')
-            ->addOption('md5', null, null, 'Search for nodes by MD5 rather than name')
+            ->addArgument('query', InputArgument::REQUIRED, 'Query string to search for')
+            ->addOption('md5', 'm', null, 'Search for nodes by MD5 rather than name')
             ->addOption('time', 't', null, 'Order output by date modified');
     }
 
