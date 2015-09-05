@@ -233,30 +233,6 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
-     * Find all nodes that match the given MD5 checksum.
-     *
-     * @param string $md5
-     *
-     * @return array
-     */
-    public static function findNodesByMd5($md5)
-    {
-        return self::$cacheStore->findNodesByMd5($md5);
-    }
-
-    /**
-     * Find all nodes whose name matches the given string.
-     *
-     * @param string $name
-     *
-     * @return array
-     */
-    public static function findNodesByName($name)
-    {
-        return self::$cacheStore->findNodesByName($name);
-    }
-
-    /**
      * Get all children of the given `Node`.
      *
      * @return array
@@ -264,6 +240,16 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     public function getChildren()
     {
         return self::$cacheStore->getNodeChildren($this);
+    }
+
+    /**
+     * Get the MD5 checksum of the `Node`.
+     *
+     * @return mixed
+     */
+    public function getMd5()
+    {
+        return $this['contentProperties']['md5'];
     }
 
     /**
@@ -325,7 +311,7 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         while (true) {
             $path[] = $node["name"];
-            if ($node["isRoot"] === true) {
+            if ($node->isRoot()) {
                 break;
             }
 
@@ -334,7 +320,7 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
                 throw new \Exception("No parent node found with ID {$node['parents'][0]}.");
             }
 
-            if ($node['isRoot'] === true) {
+            if ($node->isRoot()) {
                 break;
             }
         }
@@ -406,6 +392,16 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Returns whether the `Node` is the `root` node.
+     *
+     * @return bool
+     */
+    public function isRoot()
+    {
+        return $this['isRoot'] ? true : false;
+    }
+
+    /**
      * Load a `Node` given an ID or remote path.
      *
      * @param string $param Parameter to find the `Node` by: ID or path
@@ -434,15 +430,27 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
-     * Find and return `Nodes` that have the given MD5.
+     * Find and return `Nodes` that have the given MD5 checksum.
      *
-     * @param string $md5 MD5 checksum of the node
+     * @param string $md5
      *
      * @return array
      */
     public static function loadByMd5($md5)
     {
         return self::$cacheStore->findNodesByMd5($md5);
+    }
+
+    /**
+     * Find all nodes whose name matches the given string.
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    public static function loadByName($name)
+    {
+        return self::$cacheStore->findNodesByName($name);
     }
 
     /**
@@ -461,7 +469,7 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
         }
 
         $info = pathinfo($path);
-        $nodes = self::$cacheStore->findNodesByName($info['basename']);
+        $nodes = self::loadByName($info['basename']);
         if (empty($nodes)) {
             return null;
         }
@@ -483,13 +491,13 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
      */
     public static function loadRoot()
     {
-        $results = self::$cacheStore->findNodesByName('Cloud Drive');
+        $results = self::loadByName('Cloud Drive');
         if (empty($results)) {
             throw new \Exception("No node by name 'Cloud Drive' found in the database.");
         }
 
         foreach ($results as $result) {
-            if ($result["isRoot"] === true) {
+            if ($result->isRoot()) {
                 return $result;
             }
         }
