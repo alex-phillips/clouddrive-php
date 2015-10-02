@@ -278,10 +278,6 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
                 'headers'    => [
                     'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
                 ],
-                'json'       => [
-                    'fromParent' => $this['parents'][0],
-                    'childId'    => $this['id'],
-                ],
                 'query' => [
                     'tempLink' => $tempLink ? 'true' : 'false',
                 ],
