@@ -275,9 +275,6 @@ abstract class Command extends CilexCommand
 
     abstract protected function main();
 
-    /**
-     *
-     */
     protected function readConfig()
     {
         $this->config = new ParameterBag();
@@ -320,9 +317,6 @@ abstract class Command extends CilexCommand
         }
     }
 
-    /**
-     *
-     */
     protected function saveConfig()
     {
         file_put_contents("{$this->configPath}config.json", json_encode($this->config));
