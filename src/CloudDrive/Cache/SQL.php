@@ -214,7 +214,6 @@ abstract class SQL implements Cache
             'kind'     => $node['kind'],
             'md5'      => $node['contentProperties']['md5'],
             'status'   => $node['status'],
-            'parents'  => implode(',', $node['parents']),
             'created'  => $node['createdDate'],
             'modified' => $node['modifiedDate'],
             'raw_data' => json_encode($node),

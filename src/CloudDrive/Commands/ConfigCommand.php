@@ -42,12 +42,10 @@ class ConfigCommand extends Command
 
             if ($value = $this->input->getArgument('value')) {
                 $this->setConfigValue($option, $value);
-                $this->saveConfig();
                 $this->output->writeln("<blue>$option</blue> saved");
             } else {
                 if ($this->input->getOption('remove')) {
                     $this->removeConfigValue($option);
-                    $this->saveConfig();
                 } else {
                     $value = $this->config[$option];
                     if ($this->configValues[$option]['type'] === 'bool') {
@@ -58,5 +56,7 @@ class ConfigCommand extends Command
                 }
             }
         }
+
+        $this->saveConfig();
     }
 }

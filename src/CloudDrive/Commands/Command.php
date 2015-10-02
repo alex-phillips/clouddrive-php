@@ -8,6 +8,7 @@
 namespace CloudDrive\Commands;
 
 use Cilex\Command\Command as CilexCommand;
+use CloudDrive\Cache\MySQL;
 use CloudDrive\Cache\SQLite;
 use CloudDrive\CloudDrive;
 use CloudDrive\Node;
@@ -68,6 +69,26 @@ abstract class Command extends CilexCommand
         'upload.duplicates' => [
             'type'    => 'bool',
             'default' => false,
+        ],
+        'database.driver' => [
+            'type'    => 'string',
+            'default' => 'sqlite',
+        ],
+        'database.database' => [
+            'type'    => 'string',
+            'default' => 'clouddrive-php',
+        ],
+        'database.host' => [
+            'type'    => 'string',
+            'default' => '127.0.0.1',
+        ],
+        'database.username' => [
+            'type'    => 'string',
+            'default' => 'root',
+        ],
+        'database.password' => [
+            'type'    => 'string',
+            'default' => '',
         ],
         'display.trash'     => [
             'type'    => 'bool',
@@ -131,7 +152,19 @@ abstract class Command extends CilexCommand
 
     protected function generateCacheStore()
     {
-        return new SQLite($this->config['email'], $this->configPath);
+        switch ($this->config->get('database.driver')) {
+            case 'sqlite':
+                return new SQLite($this->config['email'], $this->configPath);
+                break;
+            case 'mysql':
+                return new MySQL(
+                    $this->config['database.host'],
+                    $this->config['database.database'],
+                    $this->config['database.username'],
+                    $this->config['database.password']
+                );
+                break;
+        }
     }
 
     protected function init()
@@ -263,8 +296,12 @@ abstract class Command extends CilexCommand
     protected function setConfig(array $data)
     {
         $data = (new ParameterBag($data))->flatten();
-        foreach ($data as $key => $value) {
-            $this->setConfigValue($key, $value);
+        foreach ($this->configValues as $option => $config) {
+            if (isset($data[$option])) {
+                $this->setConfigValue($option, $data[$option]);
+            } else {
+                $this->setConfigValue($option, $config['default']);
+            }
         }
     }
 
