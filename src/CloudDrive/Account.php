@@ -492,15 +492,10 @@ class Account
                     $this->cache->deleteAllNodes();
                 }
 
-                if (isset($part['checkpoint'])) {
-                    $this->checkpoint = $part['checkpoint'];
-                }
-
                 if (isset($part['nodes'])) {
                     if (empty($part['nodes'])) {
                         $loop = false;
                     } else {
-                        $this->save();
                         foreach ($part['nodes'] as $node) {
                             $node = new Node($node);
                             if ($node['status'] === 'PURGED') {
@@ -511,6 +506,12 @@ class Account
                         }
                     }
                 }
+
+                if (isset($part['checkpoint'])) {
+                    $this->checkpoint = $part['checkpoint'];
+                }
+
+                $this->save();
             }
 
             if (!$loop) {
