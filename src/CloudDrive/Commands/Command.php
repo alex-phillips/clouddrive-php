@@ -76,7 +76,7 @@ abstract class Command extends CilexCommand
         ],
         'database.database' => [
             'type'    => 'string',
-            'default' => 'clouddrive-php',
+            'default' => 'clouddrive_php',
         ],
         'database.host' => [
             'type'    => 'string',
