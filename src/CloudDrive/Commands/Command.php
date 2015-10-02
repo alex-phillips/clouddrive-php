@@ -70,7 +70,7 @@ abstract class Command extends CilexCommand
             'type'    => 'bool',
             'default' => false,
         ],
-        'database.driver' => [
+        'database.driver'   => [
             'type'    => 'string',
             'default' => 'sqlite',
         ],
@@ -78,7 +78,7 @@ abstract class Command extends CilexCommand
             'type'    => 'string',
             'default' => 'clouddrive_php',
         ],
-        'database.host' => [
+        'database.host'     => [
             'type'    => 'string',
             'default' => '127.0.0.1',
         ],
