@@ -12,7 +12,7 @@ class SyncCommand extends Command
     protected function configure()
     {
         $this->setName('sync')
-            ->setDescription('Sync the local cache with Amazon CloudDrive');
+            ->setDescription('Sync the local cache with Amazon Cloud Drive');
     }
 
     protected function main()

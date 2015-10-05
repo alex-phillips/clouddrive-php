@@ -17,7 +17,7 @@ class DiskUsageCommand extends Command
     protected function configure()
     {
         $this->setName('du')
-            ->setDescription('Display disk usage for the given node')
+            ->setDescription('Display disk usage (recursively) for the given node')
             ->addArgument('path', InputArgument::OPTIONAL, 'The remote path of the node')
             ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path')
             ->addOption('assets', 'a', null, 'Include assets in output');

@@ -17,7 +17,7 @@ class MetadataCommand extends Command
     protected function configure()
     {
         $this->setName('metadata')
-            ->setDescription('Retrieve the metadata (JSON) of a node by its path')
+            ->setDescription('Retrieve the metadata (JSON) of a node')
             ->addArgument('path', InputArgument::OPTIONAL, 'The remote path of the node')
             ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
     }
