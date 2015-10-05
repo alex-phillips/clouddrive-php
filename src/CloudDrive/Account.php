@@ -154,18 +154,16 @@ class Account
             if (!$response["success"]) {
                 return $response;
             }
-
-            $this->token->merge($response["data"]);
         } else {
             if (time() - $this->token["last_authorized"] > $this->token["expires_in"]) {
                 $response = $this->renewAuthorization();
                 if (!$response["success"]) {
                     return $response;
                 }
-
-                $this->token->merge($response['data']);
             }
         }
+
+        $this->token->merge($response['data']);
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
             $response = $this->fetchEndpoint();
