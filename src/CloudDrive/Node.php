@@ -218,8 +218,10 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         $retval['success'] = true;
 
+        $stream = $response->getBody()->detach();
+
         $retval['data'] = [
-            'stream' => $response->getBody()
+            'stream' => $stream
         ];
 
         if (is_callable($callback)) {
