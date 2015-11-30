@@ -163,7 +163,9 @@ class Account
             }
         }
 
-        $this->token->merge($response['data']);
+        if ($response && $response['data']) {
+            $this->token->merge($response['data']);
+        }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
             $response = $this->fetchEndpoint();
