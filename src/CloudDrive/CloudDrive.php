@@ -352,11 +352,11 @@ class CloudDrive
     /**
      * Upload a single file to Amazon Cloud Drive.
      *
-     * @param string|resource     $localPath     The local path to the file to upload
-     * @param string              $remotePath    The remote folder to upload the file to
-     * @param bool|false          $overwrite     Whether to overwrite the file if it already
+     * @param string     $localPath     The local path to the file to upload
+     * @param string     $remotePath    The remote folder to upload the file to
+     * @param bool|false $overwrite     Whether to overwrite the file if it already
      *                                  exists remotely
-     * @param bool                $suppressDedup Disables checking for duplicates when uploading
+     * @param bool       $suppressDedup Disables checking for duplicates when uploading
      *
      * @return array
      */
@@ -368,21 +368,17 @@ class CloudDrive
             'response_code' => null,
         ];
 
-        $info = pathinfo($remotePath);
+        $info = pathinfo($localPath);
         $remotePath = $this->getPathString($this->getPathArray($remotePath));
 
-        if ($info['dirname'] == '.') {
-            $info['dirname'] = '/';
-        }
-
-        $response = $this->createDirectoryPath($info['dirname']);
+        $response = $this->createDirectoryPath($remotePath);
         if ($response['success'] === false) {
             return $response;
         }
 
         $remoteFolder = $response['data'];
 
-        $response = $this->nodeExists($remotePath, $localPath);
+        $response = $this->nodeExists("$remotePath/{$info['basename']}", $localPath);
         if ($response['success'] === true) {
             $pathMatch = $response['data']['path_match'];
             $md5Match = $response['data']['md5_match'];
@@ -434,7 +430,7 @@ class CloudDrive
                     ],
                     [
                         'name'     => 'contents',
-                        'contents' => is_resource($localPath) ? $localPath : fopen($localPath, 'r'),
+                        'contents' => fopen($localPath, 'r'),
                     ],
                 ],
                 'exceptions' => false,
