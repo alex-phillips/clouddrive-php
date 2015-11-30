@@ -136,6 +136,8 @@ class Account
 
         $scope = rawurlencode(implode(' ', $this->scope));
 
+        $response = null;
+
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
                 $retval = [
