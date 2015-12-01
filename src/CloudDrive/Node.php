@@ -184,7 +184,6 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     /**
      * Get a FILE node and return the stream.
      *
-     * @param resource|string $dest
      * @param callable        $callback
      *
      * @return array
