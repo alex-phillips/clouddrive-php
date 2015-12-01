@@ -28,9 +28,9 @@ class MySQL extends SQL
                 content_url MEDIUMTEXT,
                 metadata_url MEDIUMTEXT,
                 checkpoint TEXT,
-                PRIMARY KEY (id)
+                PRIMARY KEY (id),
+                INDEX (email)
             );
-            ALTER TABLE `configs` ADD INDEX `email` (`email`);
         ');
         ORM::get_db()->exec('
             CREATE TABLE IF NOT EXISTS nodes (
@@ -42,11 +42,9 @@ class MySQL extends SQL
                 created DATETIME,
                 modified DATETIME,
                 raw_data LONGTEXT,
-                PRIMARY KEY (id)
+                PRIMARY KEY (id),
+                INDEX (id, name, md5)
             );
-            ALTER TABLE `nodes` ADD INDEX `id` (`id`);
-            ALTER TABLE `nodes` ADD INDEX `name` (`name`);
-            ALTER TABLE `nodes` ADD INDEX `md5` (`md5`);
         ');
         ORM::get_db()->exec('
             CREATE TABLE IF NOT EXISTS nodes_nodes (
@@ -54,7 +52,8 @@ class MySQL extends SQL
                 id_node VARCHAR(255) NOT NULL,
                 id_parent VARCHAR(255) NOT NULL,
                 PRIMARY KEY (id),
-                UNIQUE KEY (id_node, id_parent)
+                UNIQUE KEY (id_node, id_parent),
+                INDEX(id_node, id_parent)
             );
         ');
     }
