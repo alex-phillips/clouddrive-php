@@ -429,8 +429,9 @@ class CloudDrive
                         ),
                     ],
                     [
-                        'name'     => 'contents',
+                        'name'     => 'file',
                         'contents' => fopen($localPath, 'r'),
+                        'filename' => $info['basename']
                     ],
                 ],
                 'exceptions' => false,
@@ -533,8 +534,9 @@ class CloudDrive
                         ),
                     ],
                     [
-                        'name'     => 'contents',
+                        'name'     => 'file',
                         'contents' => $resource,
+                        'filename' => $info['basename']
                     ],
                 ],
                 'exceptions' => false,
