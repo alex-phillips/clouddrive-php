@@ -449,6 +449,105 @@ class CloudDrive
     }
 
     /**
+     * Upload a single file to Amazon Cloud Drive.
+     *
+     * @param resource     $resource     The local path to the file to upload
+     * @param string     $remotePath    The remote folder to upload the file to, including the file name
+     * @param bool|false $overwrite     Whether to overwrite the file if it already
+     *                                  exists remotely
+     * @param bool       $suppressDedup Disables checking for duplicates when uploading
+     *
+     * @return array
+     */
+    public function uploadStream($resource, $remotePath, $overwrite = false, $suppressDedup = false)
+    {
+        $retval = [
+            'success'       => false,
+            'data'          => [],
+            'response_code' => null,
+        ];
+
+        $info = pathinfo($remotePath);
+        $remotePath = $this->getPathString($this->getPathArray($info['dirname']));
+
+        $response = $this->createDirectoryPath($remotePath);
+        if ($response['success'] === false) {
+            return $response;
+        }
+
+        $remoteFolder = $response['data'];
+
+        $response = $this->nodeExists("$remotePath/{$info['basename']}", $resource);
+        if ($response['success'] === true) {
+            $pathMatch = $response['data']['path_match'];
+            $md5Match = $response['data']['md5_match'];
+
+            if ($pathMatch === true && $md5Match === true) {
+                // Skip if path and MD5 match
+                $retval['data'] = $response['data'];
+
+                return $retval;
+            } else if ($pathMatch === true && $md5Match === false) {
+                // If path is the same and checksum differs, only overwrite
+                if ($overwrite === true) {
+                    return $response['data']['node']->overwrite($resource);
+                }
+
+                $retval['data'] = $response['data'];
+
+                return $retval;
+            } else if ($pathMatch === false && $md5Match === true) {
+                // If path differs and checksum is the same, check for dedup
+                if ($suppressDedup === false) {
+                    $retval['data'] = $response['data'];
+
+                    return $retval;
+                }
+            }
+        }
+
+        $suppressDedup = $suppressDedup ? '?suppress=deduplication' : '';
+
+        $response = $this->httpClient->post(
+            "{$this->account->getContentUrl()}nodes{$suppressDedup}",
+            [
+                'headers'    => [
+                    'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
+                ],
+                'multipart'  => [
+                    [
+                        'name'     => 'metadata',
+                        'contents' => json_encode(
+                            [
+                                'kind'    => 'FILE',
+                                'name'    => $info['basename'],
+                                'parents' => [
+                                    $remoteFolder['id'],
+                                ]
+                            ]
+                        ),
+                    ],
+                    [
+                        'name'     => 'contents',
+                        'contents' => $resource,
+                    ],
+                ],
+                'exceptions' => false,
+            ]
+        );
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+        $retval['response_code'] = $response->getStatusCode();
+
+        if (($retval['response_code'] = $response->getStatusCode()) === 201) {
+            $retval['success'] = true;
+            (new Node($retval['data']))->save();
+        }
+
+        return $retval;
+    }
+
+    /**
      * A quick wrapper for a streamable implementation of md5.
      *
      * @param string|resource $source
