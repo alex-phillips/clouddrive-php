@@ -81,19 +81,62 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Delete a `Node` permanently.
+     *
+     * @return bool
+     */
+    public function forceDelete()
+    {
+        $retval = [
+            'success' => false,
+            'data'    => [],
+        ];
+
+        if (!$this->inTrash()) {
+            return $retval;
+        }
+
+        $response = self::$httpClient->delete(
+            self::$account->getContentUrl() . "nodes/{$this['id']}",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'stream'     => true,
+                'exceptions' => false,
+            ]
+        );
+
+        if ($response->getStatusCode() !== 202) {
+            return $retval;
+        }
+
+        $retval['success'] = true;
+
+        // Purge from the cache
+        $this->delete();
+
+        return $retval;
+    }
+
+    /**
      * Download contents of `Node` to local save path. If only the local
      * directory is given, the file will be saved as its remote name.
      *
-     * @param resource|string $dest
+     * @param resource|string|null $dest
      * @param callable        $callback
      *
      * @return array
      * @throws \Exception
      */
-    public function download($dest, $callback = null)
+    public function download($dest = null, $callback = null)
     {
         if ($this->isFolder()) {
             return $this->downloadFolder($dest, $callback);
+        }
+
+        if (is_null($dest) || is_callable($dest)) {
+            return $this->downloadStream(is_callable($dest) ? $dest : $callback);
         }
 
         return $this->downloadFile($dest, $callback);
@@ -153,8 +196,6 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
             ]
         );
 
-        $retval['data'] = json_decode((string)$response->getBody(), true);
-
         if ($response->getStatusCode() !== 200) {
             if (is_callable($callback)) {
                 call_user_func($callback, $retval, $dest);
@@ -174,6 +215,55 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
 
         if (is_callable($callback)) {
             call_user_func($callback, $retval, $dest);
+        }
+
+        return $retval;
+    }
+
+    /**
+     * Get a FILE node and return the stream.
+     *
+     * @param callable        $callback
+     *
+     * @return array
+     * @throws \Exception
+     */
+    protected function downloadStream($callback = null)
+    {
+        $retval = [
+            'success' => false,
+            'data'    => [],
+        ];
+
+        $response = self::$httpClient->get(
+            self::$account->getContentUrl() . "nodes/{$this['id']}/content",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'stream'     => true,
+                'exceptions' => false,
+            ]
+        );
+
+        if ($response->getStatusCode() !== 200) {
+            if (is_callable($callback)) {
+                call_user_func($callback, $retval);
+            }
+
+            return $retval;
+        }
+
+        $retval['success'] = true;
+
+        $stream = $response->getBody()->detach();
+
+        $retval['data'] = [
+            'stream' => $stream
+        ];
+
+        if (is_callable($callback)) {
+            call_user_func($callback, $retval);
         }
 
         return $retval;
@@ -553,11 +643,11 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
      * Replace file contents of the `Node` with the file located at the given
      * local path.
      *
-     * @param string $localPath
+     * @param string|resource $local
      *
      * @return array
      */
-    public function overwrite($localPath)
+    public function overwrite($local)
     {
         $retval = [
             'success' => false,
@@ -573,7 +663,7 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
                 'multipart'  => [
                     [
                         'name'     => 'content',
-                        'contents' => fopen($localPath, 'r'),
+                        'contents' => is_resource($local) ? $local : fopen($local, 'r'),
                     ],
                 ],
                 'exceptions' => false,

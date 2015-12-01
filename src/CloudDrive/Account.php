@@ -136,6 +136,8 @@ class Account
 
         $scope = rawurlencode(implode(' ', $this->scope));
 
+        $response = null;
+
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
                 $retval = [
@@ -163,7 +165,9 @@ class Account
             }
         }
 
-        $this->token->merge($response['data']);
+        if ($response && $response['data']) {
+            $this->token->merge($response['data']);
+        }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
             $response = $this->fetchEndpoint();
