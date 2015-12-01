@@ -81,6 +81,45 @@ class Node implements ArrayAccess, IteratorAggregate, JsonSerializable, Countabl
     }
 
     /**
+     * Delete a `Node` permanently.
+     *
+     * @return bool
+     */
+    public function forceDelete()
+    {
+        $retval = [
+            'success' => false,
+            'data'    => [],
+        ];
+
+        if (!$this->inTrash()) {
+            return $retval;
+        }
+
+        $response = self::$httpClient->delete(
+            self::$account->getContentUrl() . "nodes/{$this['id']}",
+            [
+                'headers'    => [
+                    'Authorization' => 'Bearer ' . self::$account->getToken()['access_token'],
+                ],
+                'stream'     => true,
+                'exceptions' => false,
+            ]
+        );
+
+        if ($response->getStatusCode() !== 202) {
+            return $retval;
+        }
+
+        $retval['success'] = true;
+
+        // Purge from the cache
+        $this->delete();
+
+        return $retval;
+    }
+
+    /**
      * Download contents of `Node` to local save path. If only the local
      * directory is given, the file will be saved as its remote name.
      *
