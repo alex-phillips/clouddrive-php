@@ -369,11 +369,6 @@ class CloudDrive
         ];
 
         $info = pathinfo($localPath);
-
-        if ($info['dirname'] == '.') {
-            $info['dirname'] = '/';
-        }
-
         $remotePath = $this->getPathString($this->getPathArray($remotePath));
 
         $response = $this->createDirectoryPath($remotePath);
@@ -473,6 +468,11 @@ class CloudDrive
         ];
 
         $info = pathinfo($remotePath);
+
+        if ($info['dirname'] == '.') {
+            $info['dirname'] = '/';
+        }
+
         $remotePath = $this->getPathString($this->getPathArray($info['dirname']));
 
         $response = $this->createDirectoryPath($remotePath);
