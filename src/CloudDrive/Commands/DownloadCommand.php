@@ -17,7 +17,7 @@ class DownloadCommand extends Command
         $this->setName('download')
             ->setDescription('Download remote file or folder to specified local path')
             ->addArgument('remote_path', InputArgument::REQUIRED, 'The remote file path to download')
-            ->addArgument('local_path', InputArgument::OPTIONAL, 'The path to save the file')
+            ->addArgument('local_path', InputArgument::OPTIONAL, 'The path to save the file / folder to')
             ->addOption('id', 'i', null, 'Designate the remote node by its ID instead of its remote path');
     }
 
