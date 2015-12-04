@@ -371,12 +371,14 @@ class CloudDrive
         $info = pathinfo($localPath);
         $remotePath = $this->getPathString($this->getPathArray($remotePath));
 
-        $response = $this->createDirectoryPath($remotePath);
-        if ($response['success'] === false) {
-            return $response;
-        }
+        if (!($remoteFolder = Node::loadByPath($remotePath))) {
+            $response = $this->createDirectoryPath($remotePath);
+            if ($response['success'] === false) {
+                return $response;
+            }
 
-        $remoteFolder = $response['data'];
+            $remoteFolder = $response['data'];
+        }
 
         $response = $this->nodeExists("$remotePath/{$info['basename']}", $localPath);
         if ($response['success'] === true) {
