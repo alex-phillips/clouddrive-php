@@ -211,7 +211,7 @@ class CloudDrive
      * path is given, the MD5 will be compared as well.
      *
      * @param string      $remotePath The remote path to check
-     * @param null|string $localPath  Local path of file to compare MD5
+     * @param null|string|resource $localPath  Local path of file to compare MD5
      *
      * @return array
      * @throws \Exception'
@@ -219,8 +219,8 @@ class CloudDrive
     public function nodeExists($remotePath, $localPath = null)
     {
         if (is_null($file = Node::loadByPath($remotePath))) {
-            if (!is_null($localPath)) {
-                if (!empty($nodes = Node::loadByMd5(md5_file($localPath)))) {
+            if (!is_null($localPath) && $this->isSeekable($localPath)) {
+                if (!empty($nodes = Node::loadByMd5($this->md5($localPath)))) {
                     $ids = [];
                     foreach ($nodes as $node) {
                         $ids[] = $node['id'];
@@ -259,8 +259,8 @@ class CloudDrive
         ];
 
         if (!is_null($localPath)) {
-            if (!is_null($file['contentProperties']['md5'])) {
-                if (md5_file($localPath) !== $file['contentProperties']['md5']) {
+            if (!$this->isSeekable($localPath) || !is_null($file['contentProperties']['md5'])) {
+                if ($this->md5($localPath) !== $file['contentProperties']['md5']) {
                     $retval['data']['message'] = "File $remotePath exists but does not match local checksum.";
                 } else {
                     $retval['data']['message'] = "File $remotePath exists and is identical to local copy.";
@@ -431,8 +431,9 @@ class CloudDrive
                         ),
                     ],
                     [
-                        'name'     => 'contents',
+                        'name'     => 'file',
                         'contents' => fopen($localPath, 'r'),
+                        'filename' => $info['basename']
                     ],
                 ],
                 'exceptions' => false,
@@ -448,5 +449,148 @@ class CloudDrive
         }
 
         return $retval;
+    }
+
+    /**
+     * Upload a single file to Amazon Cloud Drive.
+     *
+     * @param resource     $resource     The local path to the file to upload
+     * @param string     $remotePath    The remote folder to upload the file to, including the file name
+     * @param bool|false $overwrite     Whether to overwrite the file if it already
+     *                                  exists remotely
+     * @param bool       $suppressDedup Disables checking for duplicates when uploading
+     *
+     * @return array
+     */
+    public function uploadStream($resource, $remotePath, $overwrite = false, $suppressDedup = false)
+    {
+        $retval = [
+            'success'       => false,
+            'data'          => [],
+            'response_code' => null,
+        ];
+
+        $info = pathinfo($remotePath);
+
+        if ($info['dirname'] == '.') {
+            $info['dirname'] = '/';
+        }
+
+        $remotePath = $this->getPathString($this->getPathArray($info['dirname']));
+
+        if (!($remoteFolder = Node::loadByPath($remotePath))) {
+            $response = $this->createDirectoryPath($remotePath);
+            if ($response['success'] === false) {
+                return $response;
+            }
+
+            $remoteFolder = $response['data'];
+        }
+
+        $response = $this->nodeExists("$remotePath/{$info['basename']}", $resource);
+        if ($response['success'] === true) {
+            $pathMatch = $response['data']['path_match'];
+            $md5Match = $response['data']['md5_match'];
+
+            if ($pathMatch === true && $md5Match === true) {
+                // Skip if path and MD5 match
+                $retval['data'] = $response['data'];
+
+                return $retval;
+            } else if ($pathMatch === true && $md5Match === false) {
+                // If path is the same and checksum differs, only overwrite
+                if ($overwrite === true) {
+                    return $response['data']['node']->overwrite($resource);
+                }
+
+                $retval['data'] = $response['data'];
+
+                return $retval;
+            } else if ($pathMatch === false && $md5Match === true) {
+                // If path differs and checksum is the same, check for dedup
+                if ($suppressDedup === false) {
+                    $retval['data'] = $response['data'];
+
+                    return $retval;
+                }
+            }
+        }
+
+        $suppressDedup = $suppressDedup ? '?suppress=deduplication' : '';
+
+        $response = $this->httpClient->post(
+            "{$this->account->getContentUrl()}nodes{$suppressDedup}",
+            [
+                'headers'    => [
+                    'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
+                ],
+                'multipart'  => [
+                    [
+                        'name'     => 'metadata',
+                        'contents' => json_encode(
+                            [
+                                'kind'    => 'FILE',
+                                'name'    => $info['basename'],
+                                'parents' => [
+                                    $remoteFolder['id'],
+                                ]
+                            ]
+                        ),
+                    ],
+                    [
+                        'name'     => 'file',
+                        'contents' => $resource,
+                        'filename' => $info['basename']
+                    ],
+                ],
+                'exceptions' => false,
+            ]
+        );
+
+        $retval['data'] = json_decode((string)$response->getBody(), true);
+        $retval['response_code'] = $response->getStatusCode();
+
+        if (($retval['response_code'] = $response->getStatusCode()) === 201) {
+            $retval['success'] = true;
+            (new Node($retval['data']))->save();
+        }
+
+        return $retval;
+    }
+
+    /**
+     * A quick wrapper for a streamable implementation of md5.
+     *
+     * @param string|resource $source
+     * @return string
+     */
+    private function md5($source) {
+        $ctx = hash_init('md5');
+
+        if (is_resource($source)) {
+            hash_update_stream($ctx, $source);
+
+            rewind($source);
+        } else {
+            hash_update_file($ctx, $source);
+        }
+
+        return hash_final($ctx);
+    }
+
+    /**
+     * Check if a given object is seekable/a stream.
+     *
+     * @param $resource
+     * @return bool
+     */
+    private function isSeekable($resource) {
+        if (!is_resource($resource)) {
+            return true;
+        }
+
+        $meta = stream_get_meta_data($resource);
+
+        return $meta['seekable'];
     }
 }
