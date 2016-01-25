@@ -352,11 +352,10 @@ class CloudDrive
     /**
      * Upload a single file to Amazon Cloud Drive.
      *
-     * @param string     $localPath     The local path to the file to upload
-     * @param string     $remotePath    The remote folder to upload the file to
-     * @param bool|false $overwrite     Whether to overwrite the file if it already
-     *                                  exists remotely
-     * @param bool       $suppressDedup Disables checking for duplicates when uploading
+     * @param string|resource  $localPath     The local path to the file to upload
+     * @param string           $remotePath    The remote folder to upload the file to
+     * @param bool|false       $overwrite     Whether to overwrite the file if it already exists remotely
+     * @param bool             $suppressDedup Disables checking for duplicates when uploading
      *
      * @return array
      */
@@ -367,6 +366,14 @@ class CloudDrive
             'data'          => [],
             'response_code' => null,
         ];
+
+        if(is_resource($localPath)) {
+            // Grab the metadata from the stream, so we can get the path
+            $stream = $localPath;
+            $localPath = stream_get_meta_data($localPath)['uri'];
+        } else {
+            $stream = fopen($localPath, 'r');
+        }
 
         $info = pathinfo($localPath);
         $remotePath = $this->getPathString($this->getPathArray($remotePath));
@@ -380,7 +387,7 @@ class CloudDrive
             $remoteFolder = $response['data'];
         }
 
-        $response = $this->nodeExists("$remotePath/{$info['basename']}", $localPath);
+        $response = $this->nodeExists("$remotePath/{$info['basename']}", $stream);
         if ($response['success'] === true) {
             $pathMatch = $response['data']['path_match'];
             $md5Match = $response['data']['md5_match'];
@@ -393,7 +400,7 @@ class CloudDrive
             } else if ($pathMatch === true && $md5Match === false) {
                 // If path is the same and checksum differs, only overwrite
                 if ($overwrite === true) {
-                    return $response['data']['node']->overwrite($localPath);
+                    return $response['data']['node']->overwrite($stream);
                 }
 
                 $retval['data'] = $response['data'];
@@ -431,9 +438,11 @@ class CloudDrive
                         ),
                     ],
                     [
-                        'name'     => 'file',
-                        'contents' => fopen($localPath, 'r'),
-                        'filename' => $info['basename']
+                        'name' => 'content',
+                        'contents' => $stream,
+                        'headers' => [
+                            'Content-Type' => 'application/octet-stream'
+                        ]
                     ],
                 ],
                 'exceptions' => false,
@@ -454,7 +463,7 @@ class CloudDrive
     /**
      * Upload a single file to Amazon Cloud Drive.
      *
-     * @param resource     $resource     The local path to the file to upload
+     * @param resource   $resource      The local path to the file to upload
      * @param string     $remotePath    The remote folder to upload the file to, including the file name
      * @param bool|false $overwrite     Whether to overwrite the file if it already
      *                                  exists remotely
@@ -464,98 +473,7 @@ class CloudDrive
      */
     public function uploadStream($resource, $remotePath, $overwrite = false, $suppressDedup = false)
     {
-        $retval = [
-            'success'       => false,
-            'data'          => [],
-            'response_code' => null,
-        ];
-
-        $info = pathinfo($remotePath);
-
-        if ($info['dirname'] == '.') {
-            $info['dirname'] = '/';
-        }
-
-        $remotePath = $this->getPathString($this->getPathArray($info['dirname']));
-
-        if (!($remoteFolder = Node::loadByPath($remotePath))) {
-            $response = $this->createDirectoryPath($remotePath);
-            if ($response['success'] === false) {
-                return $response;
-            }
-
-            $remoteFolder = $response['data'];
-        }
-
-        $response = $this->nodeExists("$remotePath/{$info['basename']}", $resource);
-        if ($response['success'] === true) {
-            $pathMatch = $response['data']['path_match'];
-            $md5Match = $response['data']['md5_match'];
-
-            if ($pathMatch === true && $md5Match === true) {
-                // Skip if path and MD5 match
-                $retval['data'] = $response['data'];
-
-                return $retval;
-            } else if ($pathMatch === true && $md5Match === false) {
-                // If path is the same and checksum differs, only overwrite
-                if ($overwrite === true) {
-                    return $response['data']['node']->overwrite($resource);
-                }
-
-                $retval['data'] = $response['data'];
-
-                return $retval;
-            } else if ($pathMatch === false && $md5Match === true) {
-                // If path differs and checksum is the same, check for dedup
-                if ($suppressDedup === false) {
-                    $retval['data'] = $response['data'];
-
-                    return $retval;
-                }
-            }
-        }
-
-        $suppressDedup = $suppressDedup ? '?suppress=deduplication' : '';
-
-        $response = $this->httpClient->post(
-            "{$this->account->getContentUrl()}nodes{$suppressDedup}",
-            [
-                'headers'    => [
-                    'Authorization' => "Bearer {$this->account->getToken()['access_token']}",
-                ],
-                'multipart'  => [
-                    [
-                        'name'     => 'metadata',
-                        'contents' => json_encode(
-                            [
-                                'kind'    => 'FILE',
-                                'name'    => $info['basename'],
-                                'parents' => [
-                                    $remoteFolder['id'],
-                                ]
-                            ]
-                        ),
-                    ],
-                    [
-                        'name'     => 'file',
-                        'contents' => $resource,
-                        'filename' => $info['basename']
-                    ],
-                ],
-                'exceptions' => false,
-            ]
-        );
-
-        $retval['data'] = json_decode((string)$response->getBody(), true);
-        $retval['response_code'] = $response->getStatusCode();
-
-        if (($retval['response_code'] = $response->getStatusCode()) === 201) {
-            $retval['success'] = true;
-            (new Node($retval['data']))->save();
-        }
-
-        return $retval;
+        return $this->uploadFile($resource, $remotePath, $overwrite, $suppressDedup);
     }
 
     /**
