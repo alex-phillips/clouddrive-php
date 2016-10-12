@@ -138,13 +138,18 @@ class Account
 
         if (!$this->token["access_token"]) {
             if (!$redirectUrl) {
-                $retval = [
-                    'success' => false,
-                    'data'    => [
+                $retval['success'] = false;
+                if (!$this->clientId || !$this->clientSecret) {
+                    $retval['data'] = [
+                        'message'  => 'Initial authorization is required',
+                        'auth_url' => 'https://data-mind-687.appspot.com/clouddrive',
+                    ];
+                } else {
+                    $retval['data'] = [
                         'message'  => 'Initial authorization required.',
                         'auth_url' => "https://www.amazon.com/ap/oa?client_id={$this->clientId}&scope={$scope}&response_type=code&redirect_uri=http://localhost",
-                    ],
-                ];
+                    ];
+                }
 
                 return $retval;
             }
@@ -163,7 +168,9 @@ class Account
             }
         }
 
-        $this->token->merge($response['data']);
+        if (isset($response)) {
+            $this->token->merge($response['data']);
+        }
 
         if (!$this->token["metadata_url"] || !$this->token["content_url"]) {
             $response = $this->fetchEndpoint();
@@ -343,19 +350,25 @@ class Account
             "data"    => [],
         ];
 
-        $response = $this->httpClient->post(
-            'https://api.amazon.com/auth/o2/token',
-            [
-                'form_params' => [
-                    'grant_type'    => "refresh_token",
-                    'refresh_token' => $this->token["refresh_token"],
-                    'client_id'     => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'redirect_uri'  => "http://localhost",
-                ],
-                'exceptions'  => false,
-            ]
-        );
+        if ($this->clientId && $this->clientSecret) {
+            $response = $this->httpClient->post(
+                'https://api.amazon.com/auth/o2/token',
+                [
+                    'form_params' => [
+                        'grant_type'    => "refresh_token",
+                        'refresh_token' => $this->token["refresh_token"],
+                        'client_id'     => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'redirect_uri'  => "http://localhost",
+                    ],
+                    'exceptions'  => false,
+                ]
+            );
+        } else {
+            $response = $this->httpClient->get(
+                'https://data-mind-687.appspot.com/clouddrive?refresh_token=${this.token.refresh_token}'
+            );
+        }
 
         $retval["data"] = json_decode((string)$response->getBody(), true);
 
@@ -382,33 +395,39 @@ class Account
             'data'    => [],
         ];
 
-        $url = parse_url($authUrl);
-        parse_str($url['query'], $params);
+        if (!$token = json_decode($authUrl, true)) {
+            $url = parse_url($authUrl);
+            parse_str($url['query'], $params);
 
-        if (!isset($params['code'])) {
-            $retval['data']['message'] = "No authorization code found in callback URL: $authUrl";
+            if (!isset($params['code'])) {
+                $retval['data']['message'] = "No authorization code found in callback URL: $authUrl";
 
-            return $retval;
-        }
+                return $retval;
+            }
 
-        $response = $this->httpClient->post(
-            'https://api.amazon.com/auth/o2/token',
-            [
-                'form_params' => [
-                    'grant_type'    => 'authorization_code',
-                    'code'          => $params['code'],
-                    'client_id'     => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'redirect_uri'  => 'http://localhost',
-                ],
-                'exceptions'  => false,
-            ]
-        );
+            $response = $this->httpClient->post(
+                'https://api.amazon.com/auth/o2/token',
+                [
+                    'form_params' => [
+                        'grant_type'    => 'authorization_code',
+                        'code'          => $params['code'],
+                        'client_id'     => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'redirect_uri'  => 'http://localhost',
+                    ],
+                    'exceptions'  => false,
+                ]
+            );
 
-        $retval["data"] = json_decode((string)$response->getBody(), true);
+            $retval["data"] = json_decode((string)$response->getBody(), true);
 
-        if ($response->getStatusCode() === 200) {
+            if ($response->getStatusCode() === 200) {
+                $retval["success"] = true;
+                $retval["data"]["last_authorized"] = time();
+            }
+        } else {
             $retval["success"] = true;
+            $retval["data"] = $token;
             $retval["data"]["last_authorized"] = time();
         }
 

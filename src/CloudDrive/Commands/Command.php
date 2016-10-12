@@ -184,7 +184,7 @@ abstract class Command extends CilexCommand
 
         $this->cacheStore = $this->generateCacheStore();
 
-        if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
+        if ($this->config['email']) {
             $clouddrive = new CloudDrive(
                 $this->config['email'],
                 $this->config['client-id'],
@@ -208,7 +208,7 @@ abstract class Command extends CilexCommand
 
         $this->cacheStore = $this->generateCacheStore();
 
-        if ($this->config['email'] && $this->config['client-id'] && $this->config['client-secret']) {
+        if ($this->config['email']) {
             $clouddrive = new CloudDrive(
                 $this->config['email'],
                 $this->config['client-id'],
