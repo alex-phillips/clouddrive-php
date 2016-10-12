@@ -29,10 +29,6 @@ class InitCommand extends Command
             throw new \Exception('Email is required for initialization.');
         }
 
-        if (!$this->config['client-id'] || !$this->config['client-secret']) {
-            throw new \Exception('Amazon Cloud Drive API credentials are required for initialization.');
-        }
-
         $this->saveConfig();
 
         $this->cacheStore = $this->generateCacheStore();
