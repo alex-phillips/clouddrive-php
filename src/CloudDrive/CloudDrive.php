@@ -47,7 +47,7 @@ class CloudDrive
      * for accessing and altering nodes, retrieving account information, and
      * managing the local cache store.
      *
-     * @param string       $email        The email for the account to connec to
+     * @param string       $email        The email for the account to connect to
      * @param string       $clientId     Amazon CloudDrive API client ID credential
      * @param string       $clientSecret Amazon CloudDrive API client secret credential
      * @param Cache        $cacheStore   Local cache storage object
